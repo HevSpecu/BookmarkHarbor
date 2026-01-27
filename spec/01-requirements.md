@@ -1,12 +1,12 @@
 # AuraBookmarks 需求与技术规格（PRD + Tech Spec）
 
-> 目标：基于当前原型（Vite/React）演进为“文件管理器式”的现代浏览器书签管理插件 + 同步服务（Next.js 全栈），支持拖拽、多选、导入导出、主题/语言切换、封面与配色等高级能力，并可部署到 Vercel / Cloudflare Workers（D1）。
+> 目标：基于当前原型（Vite/React）演进为“文件管理器式”的现代浏览器书签管理应用（前端项目），支持拖拽、多选、导入导出、主题/语言切换、封面与配色等高级能力，数据存储在 **LocalStorage** 或 **D1/SQLite**。
 
 ## 1. 背景与愿景
 
 浏览器自带书签管理（尤其是树状层级与批量操作）体验偏“表单化”。AuraBookmarks 希望提供更接近文件管理器（Finder/Explorer）的交互：**单击选中、双击打开、拖拽移动/排序、F2 重命名、Delete 删除、Cmd/Ctrl 多选**，并在此基础上提供更强的视觉管理能力（颜色、封面、图标抓取、统一网格/列表视图）。
 
-同时，书签的“封面/颜色/图标”属于增强元数据，天然不在浏览器原生书签模型里，因此需要一个可选的账号体系与数据库，用于跨设备同步与备份（无管理员，仅用户自助）。
+同时，书签的“封面/颜色/图标”属于增强元数据，天然不在浏览器原生书签模型里，因此需要本地持久化（LocalStorage）或 SQLite/D1 作为数据载体（当前版本不引入登录/账号体系）。
 
 ## 2. 现有原型（当前仓库）概览
 
@@ -30,11 +30,11 @@
 
 原型缺口（后续需要产品化）：
 
-- 无持久化、无登录/同步、无导入导出、无真正的“重命名工作流/快捷键/右键菜单”
+- 无持久化、无导入导出、无真正的“重命名工作流/快捷键/右键菜单”
 - 拖拽仅支持“放入文件夹”，缺少排序与多选拖拽；缺少循环检测与权限校验
 - 颜色/封面为 UI 状态，不含存储与缩略图策略
 - i18n 未实现
-- 技术栈需迁移：目标是 **Next.js（全栈）+ Bun + shadcn/ui + 可部署到 Vercel/Cloudflare**（详见后文）
+- 技术栈需迁移：目标是 **Vite + Bun + HeroUI + 静态部署**（详见后文）
 
 ## 3. 目标与非目标
 
@@ -52,9 +52,11 @@
   - 自动从网站元信息抓取（`og:image` 等）
   - 自动从 HTML `<link rel="icon">` 等抓取 favicon/icon
   - 支持用户上传/粘贴替换
+- 图标统一使用 **Iconify**（前端渲染与图标集管理）
 - 导入/导出：支持上传并导入多个 HTML（每个 HTML 作为文件夹导入到当前或指定路径）；支持导出 HTML（全量或选中范围）
-- 支持登录（无管理员），用户数据隔离；可部署到 Vercel / Cloudflare Workers
+- 数据持久化：LocalStorage 或 D1/SQLite（当前版本不做登录/同步）
 - 多语言切换 + 深浅色切换（本地记忆）
+- UI 风格与细节需 **复刻 `@refer` 目录原型样式**（作为视觉基准）
 
 ### 3.2 非目标（v1 不做或可后置）
 
@@ -70,7 +72,7 @@
 3. 作为用户，我想给单个书签自动生成封面/图标，也可以自己上传替换。
 4. 作为用户，我想把多个浏览器导出的书签 HTML 合并导入到同一个库里。
 5. 作为用户，我想把我的书签导出为 HTML 做备份或迁移。
-6. 作为用户，我想在不同设备上同步我的“增强元数据”（颜色/封面/图标/排序/自定义字段）。
+6. 作为用户，我想在本地或自建 SQLite/D1 中安全持久化我的“增强元数据”（颜色/封面/图标/排序/自定义字段）。
 
 ## 5. 信息架构与交互规范
 
@@ -92,7 +94,7 @@
 ### 5.3 打开/进入/返回
 
 - 双击文件夹：进入文件夹
-- 双击书签：新标签打开（扩展页内 `chrome.tabs.create`；Web 端 `window.open`)
+- 双击书签：新标签打开（`window.open`)
 - Backspace/Alt+Left：返回上一级（可选）
 - 面包屑：点击任意层级跳转
 
@@ -138,7 +140,6 @@
 #### Node（节点）
 
 - `id`：全局唯一（UUID/ULID）
-- `userId`
 - `type`：`folder | bookmark`
 - `parentId`：根节点为 `null` 或固定 `root`
 - `title`
@@ -161,7 +162,6 @@
 #### Asset（上传资源）
 
 - `id`
-- `userId`
 - `kind`: `cover | icon`
 - `mime`
 - `bytes` 或 `storageKey`
@@ -169,7 +169,7 @@
 - `sha256`（去重）
 - `createdAt`
 
-> 存储策略：v1 可先把小图（例如 <= 200KB）以 base64/Blob 存到 DB；上线后建议接入对象存储（Cloudflare R2 / Supabase Storage），DB 仅存引用与缩略图。
+> 存储策略：v1 可先把小图（例如 <= 200KB）以 base64/Blob 存到 LocalStorage 或 SQLite；后续如需对象存储再扩展。
 
 ### 6.2 书签元信息抓取缓存（可选）
 
@@ -217,7 +217,7 @@
 
 ### 8.1 icon 抓取优先级
 
-对目标 URL 发起抓取（服务端进行，避免 CORS）：
+对目标 URL 发起抓取（当前前端直抓；若遇到 CORS 再考虑服务端化）：
 
 1. HTML `<link rel="icon" href="...">`
 2. `<link rel="shortcut icon">`
@@ -242,80 +242,58 @@
 - 书签封面默认 1:1（正方形），必要时可中心裁剪
 - 文件夹封面可允许 16:9 或 4:3（与网格卡片适配），v1 可先统一 4:3
 
-## 9. 登录与权限模型（无管理员）
+## 9. 数据持久化与范围（无登录）
 
-### 9.1 账号体系（建议）
+### 9.1 存储选项
 
-v1 推荐二选一（需在实现前定案）：
+- **LocalStorage**：默认方案，快速落地、无后端依赖
+- **SQLite/D1**：可选方案，用于更大数据量或多设备同步的未来扩展
 
-1. **Auth.js（NextAuth）**：邮箱魔法链接 / OAuth（GitHub/Google）  
-2. **Supabase Auth**：统一解决登录与会话（同时可用 Supabase DB/Storage）
+### 9.2 约束
 
-要求：
-
-- 仅用户自助：注册/登录/退出/注销账号（删除数据）
-- 严格数据隔离：所有查询必须以 `userId` 过滤
-
-### 9.2 扩展端会话
-
-- 扩展 UI 通过 OAuth/PKCE 或 “打开 Web 登录页完成授权” 获取会话
-- 会话存储在扩展 `storage.local`（或 cookie + sameSite）并可刷新
+- 当前版本不引入登录/账号体系
+- 所有数据均为本地或自建数据库持久化
 
 ## 10. 技术架构（目标形态）
 
 ### 10.1 总体形态
 
-- **Next.js 全栈应用**：Web 管理端 + API/Server Actions
-- **Browser Extension（MV3）**：使用同一套 UI 组件与业务逻辑（尽量共享），通过 API 同步数据
-- **构建工具**：
-  - Web（Next.js）：使用 Next.js 自身构建链
-  - Extension：使用 **Vite 打包**（输出静态资源用于 `side_panel`/扩展页面）
-- **数据库**：优先 SQLite 系（Cloudflare D1 / 本地 SQLite）；Supabase（Postgres）作为可选实现
+- **前端应用（Vite/React）**：单体前端项目（当前不打包为浏览器扩展）
+- **构建工具**：使用 **Vite 打包**
+- **数据库**：LocalStorage 或 SQLite 系（Cloudflare D1 / 本地 SQLite）
 
-### 10.2 推荐项目结构（建议迁移为 monorepo）
+### 10.2 推荐项目结构（单前端项目）
 
-> 由于扩展构建与 Next.js 部署目标不同，推荐 monorepo，避免把“扩展打包产物”与“Web SSR”强耦合。
-
-示例：
-
-- `apps/web`：Next.js（App Router）
-- `apps/extension`：扩展 UI（**Vite**；UI 组件复用）
-- `packages/ui`：shadcn/ui 二次封装与主题
-- `packages/core`：领域模型、选择/拖拽/导入导出/抓取逻辑（纯 TS，可复用）
-
-> 若坚持单包仓库：也可在 `src/extension` 单独维护扩展构建（后续需明确构建链）。
+- `src`：前端应用源码（Vite/React）
+- `src/components`：UI 组件（HeroUI 组合封装）
+- `src/core`：领域模型、选择/拖拽/导入导出/抓取逻辑（纯 TS）
 
 ### 10.3 技术栈约束
 
 - 包管理：**Bun**（`bun install`, `bun run ...`）
-- 前端：Next.js + React + TypeScript
-- UI：Tailwind + shadcn/ui（Radix）
-- Extension 构建：Vite（MV3 静态资源打包）
+- 前端：Vite + React + TypeScript
+- UI：Tailwind + **HeroUI**（React Aria）
+- 图标：**Iconify**
 - 状态：优先 React state + `zustand`（可选）+ `react-query`（可选）
-- DB/ORM（推荐）：Drizzle（支持 SQLite/D1；若接 Supabase Postgres 需单独 schema）
+- DB/ORM（可选）：Drizzle（SQLite/D1）或 LocalStorage（默认）
 - 校验：Zod
+- 文档与最佳实践：前端实现前需使用 **Context7 MCP** 查询对应库文档，并参考技能 **`vercel-react-best-practices`** 与 **`web-design-guidelines`**
 
-## 11. API 设计（v1 最小集合）
+## 11. 存储与数据接口（v1 最小集合）
 
-> Web 端与扩展端都消费同一套 API。若使用 Next.js Server Actions，可在 Web 端直接调用，扩展端走 HTTP API。
+> 当前为前端项目，不引入后端 API。数据读写通过本地存储层（LocalStorage 或 SQLite/D1 适配）完成。
 
-### 11.1 Node CRUD
+### 11.1 本地存储接口（抽象）
 
-- `GET /api/nodes?parentId=...`：列出子节点（排序）
-- `GET /api/nodes/:id`：读取详情
-- `POST /api/nodes`：新建（folder/bookmark）
-- `PATCH /api/nodes/:id`：更新（标题/URL/颜色/封面等）
-- `POST /api/nodes/move`：移动/排序（支持批量）
-- `DELETE /api/nodes`：批量删除（软删/硬删策略）
-
-### 11.2 Import/Export
-
-- `POST /api/import/html`：上传多个 HTML 文件并导入（multipart；`targetParentId` 指定导入路径；每个文件作为一个文件夹导入）
-- `GET /api/export/html?scope=...`：导出 HTML（下载）
-
-### 11.3 Metadata Fetch
-
-- `POST /api/metadata`：输入 URL，返回 `title/description/ogImage/icons[]/bestIcon`
+- `listNodes(parentId)`
+- `getNode(id)`
+- `createNode(payload)`
+- `updateNode(id, patch)`
+- `moveNodes(nodeIds, toParentId, beforeId?, afterId?)`
+- `deleteNodes(nodeIds)`
+- `importHtml(files, targetParentId)`
+- `exportHtml(scope, folderId?, nodeIds?)`
+- `fetchMetadata(url)`（可先前端直抓，后续可替换为服务端）
 
 ## 12. 性能与质量要求
 
@@ -326,23 +304,14 @@ v1 推荐二选一（需在实现前定案）：
 
 ## 13. 国际化与主题
 
-- i18n：建议 `next-intl`（Web）+ 共享 `messages/*.json`（扩展）
+- i18n：建议 `react-i18next` 或等价方案，使用 `messages/*.json`
 - 默认语言：跟随浏览器；允许用户手动切换并持久化
-- 主题：深/浅 +（可选）跟随系统；持久化到 `localStorage`/扩展 `storage`
+- 主题：深/浅 +（可选）跟随系统；持久化到 `localStorage`
 
-## 14. 浏览器扩展（Manifest v3）要求
+## 14. 运行形态（当前版本）
 
-### 14.1 形态
-
-v1 推荐：
-
-- `chrome.sidePanel`（侧边栏应用）+ 独立管理页（`chrome://extensions` 可打开）
-
-### 14.2 权限最小化
-
-- 必需：`storage`
-- 若做“一键从浏览器书签导入”：`bookmarks`（可选，按需申请）
-- 网络：仅访问后端域名（`host_permissions` 精确配置）
+- 仅前端项目（不作为浏览器扩展打包）
+- 由 Vite 构建并部署为静态站点或本地运行
 
 ## 15. 测试与验收
 
@@ -356,39 +325,28 @@ v1 推荐：
 - 封面/图标：可自动抓取 + 可手动上传/粘贴替换
 - 导入多个 HTML：每个 HTML 作为一个文件夹导入到当前或指定路径；结构正确；导出 HTML 可被浏览器再次导入
 - 主题/语言切换：即时生效且持久化
-- 登录后数据隔离：不同账号互不可见；注销可清理数据
+- 本地数据持久化：刷新/重启后数据保持
 
 ### 15.2 自动化（建议）
 
 - 单元测试：导入导出解析、排序/移动、循环检测、搜索
-- E2E：Web 端关键流程（Playwright）
-- 扩展端：可用 Playwright + chromium extension 载入做烟测（后置）
+- E2E：前端关键流程（Playwright）
 
 ## 16. 部署目标
 
-### 16.1 Vercel
-
-- Next.js SSR/Edge Functions（按需要）
-- DB：Supabase（推荐）或其它托管
-
-### 16.2 Cloudflare Workers / Pages
-
-- Next.js via `next-on-pages`（或将 Web 端静态化 + Workers API）
-- DB：Cloudflare D1（SQLite）
-- 静态资源：R2（若采用对象存储）
+- 静态部署（Vite 构建产物）
+- 若使用 D1/SQLite：部署到 Cloudflare Pages/Workers（可选）
 
 ## 17. 里程碑（建议拆分）
 
 1. **原型稳定化**：补齐快捷键/重命名工作流/排序拖拽/循环检测（仍可先在现有原型完成）
-2. **迁移到 Next.js + shadcn/ui + Bun**：建立 monorepo、统一组件库与主题
-3. **本地持久化 + 导入导出**：先不登录也能用（IndexedDB/SQLite）
-4. **登录 + 云同步**：DB schema、API、会话、数据隔离
-5. **扩展打包与发布**：MV3、权限最小化、CWS 提交流程（后置）
+2. **迁移到 Vite + HeroUI + Bun**：统一组件库与主题
+3. **本地持久化 + 导入导出**：LocalStorage 或 SQLite/D1
+4. **（后置）云同步**：若未来引入登录与后端，再补充
 
 ## 18. 待决策问题（实现前需要明确）
 
-1. 数据源：自有书签库为主，还是直接管理浏览器原生书签？（影响权限与同步复杂度）
-2. 数据库优先级：D1/SQLite（同构）还是 Supabase（Postgres）？是否需要同时支持？
-3. 图片存储：DB Blob vs 对象存储（R2/Supabase Storage）
-4. 扩展形态：side panel vs new tab vs 独立页面（可并存但需优先级）
-5. 同步策略：离线队列、冲突解决（乐观并发/最后写入/基于版本号）
+1. 数据源：自有书签库为主，还是直接管理浏览器原生书签？（当前为前端项目，默认自有库）
+2. 存储优先级：LocalStorage（默认）还是 D1/SQLite（增强）？是否需要双实现？
+3. 图片存储：DB Blob vs 本地缓存（后续再定）
+4. 元信息抓取：前端直抓 vs 未来服务端抓取（安全与 CORS 取舍）
