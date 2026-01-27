@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Folder Editor &amp; Inspector</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#2b8cee",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101922",
+              "surface-dark": "#1c2127",
+              "border-dark": "#3b4754",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"],
+              "body": ["Inter", "sans-serif"]
+            },
+            boxShadow: {
+                'glow': '0 0 20px -5px rgba(43, 140, 238, 0.5)',
+            }
+          },
+        },
+      }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #101922; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b4754; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5a69; 
+        }.glass-panel {
+            background: rgba(16, 25, 34, 0.85);backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white h-screen flex flex-col overflow-hidden selection:bg-primary selection:text-white">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#283039] bg-background-dark px-6 py-3 z-30 shrink-0">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-white">
+<div class="size-8 flex items-center justify-center bg-primary rounded-lg text-white">
+<span class="material-symbols-outlined text-[20px]">bookmarks</span>
+</div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-tight">Bookmarks</h2>
+</div>
+<label class="flex flex-col min-w-64 !h-10 max-w-96 group">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full ring-1 ring-[#3b4754] bg-surface-dark group-focus-within:ring-primary transition-all">
+<div class="text-[#9dabb9] flex border-none bg-transparent items-center justify-center pl-3">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-[#9dabb9] px-3 text-sm font-normal leading-normal" placeholder="Search bookmarks..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex items-center justify-end gap-6">
+<div class="flex gap-1 bg-surface-dark p-1 rounded-lg border border-[#3b4754]">
+<button class="flex items-center justify-center size-8 rounded hover:bg-[#283039] text-[#9dabb9] hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">grid_view</span>
+</button>
+<button class="flex items-center justify-center size-8 rounded bg-[#283039] text-white shadow-sm">
+<span class="material-symbols-outlined text-[20px]">view_list</span>
+</button>
+</div>
+<div class="flex items-center gap-3 pl-4 border-l border-[#3b4754]">
+<button class="text-[#9dabb9] hover:text-white transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-9 ring-2 ring-[#3b4754]" data-alt="User profile avatar showing a smiling person" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA7Fyp4TQc1-xkUmMzR1rraOOt8Ab9JGkL-PX0URx95tBhA8eHS_eXxNBEAFbke3e9OeAXHuPZWJZSPeB-itrdl87CXGYGb40nZ4PgAcqV914a3sMj9AvuJH2JM5lPhS1B1p255xLolj4_E_guHgCKtgSDbT8eXzh5_v4zY4RToOZwITPCNQrjUw_SsFUMUJj_0rwuCguz_vonRM0olOmHM3co5oJUTT-FH7ZJ4cM2PTXFPJS_GqsPjubNOrobVqxr9R5BVT-Xkooc");'></div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 relative overflow-hidden">
+<main class="flex-1 flex flex-col h-full relative z-0">
+<div class="flex flex-wrap justify-between gap-3 px-8 py-6 items-end">
+<div class="flex min-w-72 flex-col gap-1">
+<div class="flex items-center gap-2 text-[#9dabb9] text-sm mb-1">
+<span>All Bookmarks</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-white">Design Resources</span>
+</div>
+<p class="text-white tracking-tight text-3xl font-bold leading-tight">Design Resources</p>
+</div>
+<button class="flex items-center gap-2 cursor-pointer justify-center overflow-hidden rounded-lg h-9 px-4 bg-primary text-white text-sm font-medium hover:bg-blue-600 transition-colors shadow-lg shadow-blue-900/20">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span class="truncate">New Bookmark</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto px-8 pb-8 relative group/grid">
+<div class="fixed inset-0 top-[73px] right-[420px] bg-background-dark/40 pointer-events-none z-10 backdrop-grayscale-[30%] transition-all duration-500"></div>
+<div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-5 relative z-0">
+<div class="group relative flex flex-col gap-3 p-4 rounded-xl bg-surface-dark border border-transparent hover:border-[#3b4754] transition-all cursor-pointer opacity-60 hover:opacity-100">
+<div class="aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat relative overflow-hidden" data-alt="Abstract colorful gradient pattern" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB-zgXueWBBlQWK8Y-7cK7KP4Bl0S3OCp6Cn2LkQoqMYCvOTR05zMP5SO-V1rCqL2OhYFMrrwVyvoMpNrSmUqL7x-xtvYAlloGGnUE1cy3wzdwiXRVp5zIuogXP_WqNe78lAyOeMxmDYfTcso2l57YeChTb06IJzkBoq8-ZuzqbUclFvG6dwNIXAzMLFtWr5i4e_pFl99-dp_bZwPR2EI-DvwSYDqPadJH4K6HYwHoS-JmtPpRErthjGtJBtoVjKj86ofvpC2S8qj4");'>
+<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+</div>
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col gap-1">
+<p class="text-white text-sm font-semibold leading-tight truncate">Dribbble</p>
+<p class="text-[#9dabb9] text-xs truncate">dribbble.com</p>
+</div>
+<div class="size-5 rounded bg-white/10 flex items-center justify-center shrink-0">
+<img alt="icon" class="w-3 h-3 opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFLDZbFd459gnJpUvIFq4w2Gl0lkm8iZ0djcqK9hUVLu-pz6osmRiayVrwzZHVWQ2XM114x_J51bQJmQWKCZdsozwgP_tzg5GC6VA9gEp58zaaJ5qFvgvaewQgp4AfvP-JGAg9SE6sxytE5hfvVv_Sra-Zy5Dp2sZbBu7AQoFKrIGeWf78Gy8aOblRxjQSxThZqKQno3y1hh94JxWxNtVNHOd3aw-zkDJX85o_9S9Z8jASywBdMikkk6OT-DR56H9FF_lHz8edYkM"/>
+</div>
+</div>
+</div>
+<div class="relative flex flex-col gap-3 p-4 rounded-xl bg-[#1a232e] border-2 border-primary shadow-glow transition-all cursor-pointer z-20 ring-4 ring-primary/10 transform scale-[1.02]">
+<div class="absolute -top-2 -right-2 bg-primary text-white rounded-full p-1 shadow-md">
+<span class="material-symbols-outlined text-[14px] font-bold block">edit</span>
+</div>
+<div class="aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat relative overflow-hidden" data-alt="Folder cover image" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDeKmUBsHZ1B-wZt_dp1v6c9zBAu8HY0Z_8GkJvxXI62u9Knyu7gFUNJ_KF7WKwkzS6JcBKplcCgQGj4iXBGKuebvgjzc37p2oSyZ92AAAcGxeTeq6ovCme3oR_B2ETz-jDrfpXW2MRpvoEfaVRqqd1bPw9bMGS3z-PlqKpKbCiM391JZG4Gb2v3M8MtXn0ZmCps-x6kpa685ybvUi4wVtm_npEPbWla3xBOGDbOyKcKZT5RLaVu72Lf2Vki5_9w7tLp74Q6hwzan8");'>
+</div>
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col gap-1">
+<p class="text-white text-sm font-bold leading-tight truncate">Design Systems</p>
+<p class="text-primary text-xs truncate">12 items</p>
+</div>
+<div class="size-6 rounded bg-primary flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/20">
+<span class="material-symbols-outlined text-white text-[16px]">folder</span>
+</div>
+</div>
+</div>
+<div class="group relative flex flex-col gap-3 p-4 rounded-xl bg-surface-dark border border-transparent hover:border-[#3b4754] transition-all cursor-pointer opacity-60 hover:opacity-100">
+<div class="aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat relative overflow-hidden" data-alt="Code editor interface showing syntax highlighting" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA9AgXfYqZc2DrEi5Vz2RKvWOyvQb_zHmFwAe__5R_RDG0HxF79wT4S92_hQ7Dzvak99z14uvdZxCOaRsjk96HQ-eLFTMZYl3bbj95uNWqTGGZO7iLnhOewafq0-kXVYdeiHQ8l2qzDXZ9I9VzH4tLfgT3fdcqgb3UDX_dOUxbIuj1Mz_9oKB-z6c76f-mKznK14SJRW_MRPZuWpJTMqFS9ff5S5mtWkXd1-Uer7vGEordYFDIK8q4JW3ujii2hjWfSEadEoiwlTUU");'>
+<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+</div>
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col gap-1">
+<p class="text-white text-sm font-semibold leading-tight truncate">GitHub</p>
+<p class="text-[#9dabb9] text-xs truncate">github.com</p>
+</div>
+<div class="size-5 rounded bg-white flex items-center justify-center shrink-0">
+<img alt="icon" class="w-4 h-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAck3PM1noiWNenXVfiW1U4BtRBIfnGIJR0NFWI8qbaF1oVuWX0PN0gGcuBkd1cV8v0jyvVl0zcJrJ6re8DOomqAufDuq8J2DuciH0a252wmQH2mmHT-cGoH-XkywjgR9Arm3XgM-CIH0_t2_PL9g9KgEf73adLRIDdQdrlaCzBP1N4nJLeWupMQyglPEFiLXIKAdy5KViX8-v8tphbHUZhmZ9F1FW_Csc-zjze_UdOjZtBQlWPXD0oCfvvydvmTNREkwXDf9eGftA"/>
+</div>
+</div>
+</div>
+<div class="group relative flex flex-col gap-3 p-4 rounded-xl bg-surface-dark border border-transparent hover:border-[#3b4754] transition-all cursor-pointer opacity-60 hover:opacity-100">
+<div class="aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat relative overflow-hidden" data-alt="Minimalist abstract art shapes" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCorHfRb7oB02pUuZzKVyhhvrdueS2UkOwHmyKGYI69Pbwd2cmZs5N2o_Uaov8tA9IxTn_uHSkxDJR2440fGzSUXom4-pSSUhjEZPk1DvAT2yfjFEluKWFSZ2JcYsLt5HW4KYOV-Cwkp9bjGnMUq91FW4tzdnHokw4E3je_E9ED8rHc9wi8kmXbjFaPLE2YnPULh8Xt4-qAh58ds2j2EdHBBBlzUsyZLkZm9txXTDb5rScvCsMkkXhet-cFeb1EKhgeZJoN2BZzFDI");'>
+<div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+</div>
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col gap-1">
+<p class="text-white text-sm font-semibold leading-tight truncate">Awwwards</p>
+<p class="text-[#9dabb9] text-xs truncate">awwwards.com</p>
+</div>
+<div class="size-5 rounded bg-white/10 flex items-center justify-center shrink-0">
+<span class="text-[10px] font-bold text-white">Aw</span>
+</div>
+</div>
+</div>
+<div class="group relative flex flex-col gap-3 p-4 rounded-xl bg-surface-dark border border-transparent hover:border-[#3b4754] transition-all cursor-pointer opacity-60 hover:opacity-100">
+<div class="aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat relative overflow-hidden" data-alt="Gradient background blue and purple" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAGRnfzLcHFTEz_PKclv_Ow0LG07-08EX76OgKoVuac4S-rAxBzROYHA9zFpqO8imW5d6iQzjH_LJgxZoST7upO4kBZlgUKjnVO842Sc11eeg9IUQwfo6C9iTWTrmTLzKChqdvPRxBm-mkDbjBaiE-YaLIKXkkE3BEtjeOZgev6HtZJv9Q2ULmsPjqFV2ttXezvfppmDyRMV4WWNb24C-A2eO_eBADuJbd-kh6Qbj-mM-jK55zXO6-NxEBa5HmQ5OkfjOIYXUzBQ60");'></div>
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col gap-1">
+<p class="text-white text-sm font-semibold leading-tight truncate">Linear</p>
+<p class="text-[#9dabb9] text-xs truncate">linear.app</p>
+</div>
+</div>
+</div>
+<div class="group relative flex flex-col gap-3 p-4 rounded-xl bg-surface-dark border border-transparent hover:border-[#3b4754] transition-all cursor-pointer opacity-60 hover:opacity-100">
+<div class="aspect-[4/3] w-full rounded-lg bg-cover bg-center bg-no-repeat relative overflow-hidden" data-alt="Dark texture background" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDOmYUMHiLKOO1qSfXKigLokSLJs5OVYKCVpffi8SX-zR6_pa-7aOp_RALEtVmk1LCG58SaBJsqFgdYQs-dtmhxuA6Kv5eGG7tzf2puvZE6vaM3SRu5v3toLihBJjnjTo_mq-f6klYN0xan6Be-1Tq7XbZMhdbaWxDXun-_5MtytMdY3x5ekUTwZkCQmB_0wUfCY8CXrr-nV445caMGxHJUZvtlHeOAlLs0Q5ZF3y8TsS72zvIJTWdv99rOJOt_AeE77xiuLO6uNe0");'></div>
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col gap-1">
+<p class="text-white text-sm font-semibold leading-tight truncate">Notion</p>
+<p class="text-[#9dabb9] text-xs truncate">notion.so</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<aside class="w-[420px] glass-panel h-full z-30 flex flex-col border-l border-white/5 shadow-2xl transition-transform duration-300 ease-in-out">
+<div class="flex items-center justify-between px-6 py-5 border-b border-white/5">
+<h3 class="text-white text-lg font-bold">Edit Folder</h3>
+<div class="flex gap-2">
+<button class="text-[#9dabb9] hover:text-white transition-colors p-1 rounded hover:bg-white/5">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+<div class="w-full max-w-[280px] mx-auto aspect-square rounded-xl overflow-hidden border border-white/10 shadow-lg relative group bg-surface-dark">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Square folder cover preview" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBE5-hxa3JHlTndmgoENDBCZMLLNM6iYet86cZ-_eOOW-IEVki3b_2vHtOmS4jRzRfOvZAwjobbClL0dDzftIPMGUQfk66yJuYgpq7IOfXL_skJ0K-FmoslhZTU9gLRfolPlyoadX2q7hMAJb11TxT-BFSNPpq4gOG-8_LYwh8PMHURb6x4vAFzCXb9PLpUluZcfZGwlWG_bHkxEus7Sew0n4s5lp4mNoRoJjUV6q3cIx9-iE_QvobyQ-vM8IcfAmEuRWmEUrIYWLc");'></div>
+<div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+<button class="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium border border-white/20 hover:bg-black/80 shadow-xl flex items-center gap-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[18px]">upload</span>
+                Upload Cover
+              </button>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<label class="text-[#9dabb9] text-xs font-medium uppercase tracking-wider">Folder Color</label>
+<div class="flex gap-3">
+<button aria-label="Blue" class="w-8 h-8 rounded-full bg-blue-500 ring-2 ring-offset-2 ring-offset-[#1c2127] ring-blue-500 cursor-pointer hover:scale-110 transition-transform"></button>
+<button aria-label="Red" class="w-8 h-8 rounded-full bg-red-500 hover:scale-110 transition-transform cursor-pointer border-2 border-transparent hover:border-white/20"></button>
+<button aria-label="Green" class="w-8 h-8 rounded-full bg-green-500 hover:scale-110 transition-transform cursor-pointer border-2 border-transparent hover:border-white/20"></button>
+<button aria-label="Purple" class="w-8 h-8 rounded-full bg-purple-500 hover:scale-110 transition-transform cursor-pointer border-2 border-transparent hover:border-white/20"></button>
+<button aria-label="Orange" class="w-8 h-8 rounded-full bg-orange-500 hover:scale-110 transition-transform cursor-pointer border-2 border-transparent hover:border-white/20"></button>
+</div>
+</div>
+<div class="flex flex-col gap-5">
+<div class="flex flex-col gap-2">
+<label class="text-[#9dabb9] text-xs font-medium uppercase tracking-wider">Name</label>
+<div class="relative">
+<input class="w-full bg-surface-dark border border-border-dark text-white text-sm rounded-lg p-3 pl-10 focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder-[#5a6b7c]" type="text" value="Design Systems"/>
+<span class="material-symbols-outlined absolute left-3 top-3 text-[#9dabb9] text-[20px]">folder</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-[#9dabb9] text-xs font-medium uppercase tracking-wider">Tags</label>
+<div class="w-full bg-surface-dark border border-border-dark rounded-lg p-2 min-h-[52px] flex flex-wrap gap-2 items-center focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-all">
+<div class="flex items-center gap-1 bg-primary/20 text-primary border border-primary/30 px-2 py-1 rounded text-xs font-medium">
+<span>Design</span>
+<button class="hover:text-white transition-colors"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</div>
+<div class="flex items-center gap-1 bg-primary/20 text-primary border border-primary/30 px-2 py-1 rounded text-xs font-medium">
+<span>Tools</span>
+<button class="hover:text-white transition-colors"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</div>
+<input class="bg-transparent border-none text-white text-sm p-1 focus:ring-0 placeholder-[#5a6b7c] min-w-[80px] flex-1" placeholder="Add tag..." type="text"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-[#9dabb9] text-xs font-medium uppercase tracking-wider">Note</label>
+<textarea class="w-full bg-surface-dark border border-border-dark text-white text-sm rounded-lg p-3 focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder-[#5a6b7c] resize-none h-24" placeholder="Add a personal note...">Essential resources for the upcoming design system revamp. Includes Figma files and component libraries.</textarea>
+</div>
+</div>
+<div class="mt-2 pt-4 border-t border-white/5 flex flex-col gap-2">
+<div class="flex justify-between text-xs text-[#5a6b7c]">
+<span>Date Created</span>
+<span class="text-[#9dabb9]">Oct 24, 2023</span>
+</div>
+<div class="flex justify-between text-xs text-[#5a6b7c]">
+<span>Last Modified</span>
+<span class="text-[#9dabb9]">2 hours ago</span>
+</div>
+</div>
+</div>
+<div class="p-6 border-t border-white/5 bg-black/20 backdrop-blur-md">
+<div class="flex gap-3">
+<button class="flex-1 bg-primary hover:bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">save</span>
+                        Save Changes
+                    </button>
+<button class="bg-[#283039] hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/50 text-[#9dabb9] border border-transparent font-medium py-2.5 px-4 rounded-lg transition-all flex items-center justify-center" title="Delete Folder">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</aside>
+</div>
+
+</body></html>
