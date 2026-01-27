@@ -1,0 +1,5 @@
+{
+  "name": "AuraBookmarks",
+  "description": "A modern, minimalist browser bookmark manager with file-system capabilities, drag-and-drop, and extensive customization.",
+  "requestFramePermissions": []
+}
