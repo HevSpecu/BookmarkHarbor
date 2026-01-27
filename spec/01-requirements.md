@@ -347,6 +347,6 @@
 ## 18. 待决策问题（实现前需要明确）
 
 1. 数据源：自有书签库为主，还是直接管理浏览器原生书签？（当前为前端项目，默认自有库）
-2. 存储优先级：LocalStorage（默认）还是 D1/SQLite（增强）？是否需要双实现？
+2. 存储优先级：v1 **只实现 LocalStorage**（不做 D1/SQLite 双实现）；后续如需 D1/SQLite 走增强路径（见 `spec/decisions.md`）。
 3. 图片存储：DB Blob vs 本地缓存（后续再定）
-4. 元信息抓取：前端直抓 vs 未来服务端抓取（安全与 CORS 取舍）
+4. 元信息抓取：v1 采用前端 **best-effort** 抓取（受 CORS 影响）；后续可按 `spec/02-design.md#7` 增加服务端抓取（见 `spec/decisions.md`）。
