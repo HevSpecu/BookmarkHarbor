@@ -29,6 +29,7 @@ import {
     useLocale,
     useSelection,
     useKeyboardShortcuts,
+    useHistory,
     getStorage,
     buildBreadcrumbs,
     htmlFileSchema,
@@ -93,10 +94,10 @@ export function App() {
     const [cardFolderPreviewSize, setCardFolderPreviewSize] = useState<CardFolderPreviewSize>('2x2');
     const [customColors, setCustomColors] = useState<string[]>([]);
     const [currentView, setCurrentView] = useState<'bookmarks' | 'favorites' | 'readLater' | 'trash'>('bookmarks');
+    const [selectionMode, setSelectionMode] = useState(false);
     const [defaultViewMode, setDefaultViewMode] = useState<ViewMode>('card');
     const [rememberFolderView, setRememberFolderView] = useState(false);
     const [themeColor, setThemeColor] = useState('#3B82F6');
-    const [pendingDeletions, setPendingDeletions] = useState<{ ids: string[]; timeoutId: number } | null>(null);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -243,6 +244,7 @@ export function App() {
 
     // 获取当前文件夹的子节点
     const currentChildren = useMemo(() => {
+        if (currentView !== 'bookmarks') return [];
         return Object.values(nodes)
             .filter(n => n.parentId === currentFolderId && !n.deletedAt)
             .sort((a, b) => {
@@ -251,27 +253,51 @@ export function App() {
                 }
                 return a.orderKey.localeCompare(b.orderKey);
             });
-    }, [nodes, currentFolderId]);
+    }, [currentView, nodes, currentFolderId]);
+
+    const baseNodes = useMemo(() => {
+        if (currentView === 'favorites') {
+            return Object.values(nodes)
+                .filter(n => n.isFavorite && !n.deletedAt && n.id !== 'root')
+                .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+        }
+        if (currentView === 'readLater') {
+            return Object.values(nodes)
+                .filter(n => n.isReadLater && !n.deletedAt && n.id !== 'root')
+                .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+        }
+        if (currentView === 'trash') {
+            return Object.values(nodes)
+                .filter(n => n.deletedAt && n.id !== 'root')
+                .sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0));
+        }
+        return currentChildren;
+    }, [currentChildren, currentView, nodes]);
 
     // 搜索过滤
     const visibleNodes = useMemo(() => {
         if (!searchQuery) {
-            return currentChildren;
+            return baseNodes;
         }
 
         const query = searchQuery.toLowerCase();
-        return Object.values(nodes)
+        const searchSource = currentView === 'bookmarks'
+            ? Object.values(nodes).filter(n => !n.deletedAt && n.id !== 'root')
+            : baseNodes;
+
+        return searchSource
             .filter(n =>
-                !n.deletedAt &&
-                n.id !== 'root' &&
-                (n.title.toLowerCase().includes(query) ||
-                    (n.url && n.url.toLowerCase().includes(query)))
+                n.title.toLowerCase().includes(query) ||
+                (n.url && n.url.toLowerCase().includes(query))
             )
             .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
-    }, [nodes, currentChildren, searchQuery]);
+    }, [baseNodes, currentView, nodes, searchQuery]);
+
+    const isSortableView = currentView === 'bookmarks' && !searchQuery;
 
     // 选择管理
     const selection = useSelection({ visibleNodes });
+    const history = useHistory({ limit: 200 });
 
     // 处理语言切换
     const handleLocaleChange = useCallback((newLocale: Locale) => {
@@ -320,13 +346,29 @@ export function App() {
         setRenamingId(newNode.id);
     }, [createNode, currentFolderId, selection, t]);
 
-    // 撤销删除
-    const handleUndoDelete = useCallback(() => {
-        if (!pendingDeletions) return;
-        clearTimeout(pendingDeletions.timeoutId);
-        restoreNodes(pendingDeletions.ids);
-        setPendingDeletions(null);
-    }, [pendingDeletions, restoreNodes]);
+    const applyTrashChange = useCallback((ids: string[], action: 'delete' | 'restore') => {
+        if (ids.length === 0) return null;
+
+        if (action === 'delete') {
+            deleteNodes(ids);
+            const entry = {
+                label: 'trash-delete',
+                undo: () => restoreNodes(ids),
+                redo: () => deleteNodes(ids),
+            };
+            history.record(entry);
+            return entry.undo;
+        }
+
+        restoreNodes(ids);
+        const entry = {
+            label: 'trash-restore',
+            undo: () => deleteNodes(ids),
+            redo: () => restoreNodes(ids),
+        };
+        history.record(entry);
+        return entry.undo;
+    }, [deleteNodes, history, restoreNodes]);
 
     const handleDelete = useCallback(() => {
         if (selection.selectedIds.size === 0) return;
@@ -343,15 +385,18 @@ export function App() {
         const ids = deleteConfirmIds;
         const count = ids.length;
 
-        deleteNodes(ids);
+        if (currentView === 'trash') {
+            deleteNodes(ids, true);
+            selection.clearSelection();
+            setDeleteConfirmOpen(false);
+            setDeleteConfirmIds([]);
+            addToast({ title: t('toast.deletedPermanent', { count }), color: 'warning', timeout: 3000 });
+            return;
+        }
+
+        const undoDelete = applyTrashChange(ids, 'delete');
         selection.clearSelection();
 
-        const timeoutId = window.setTimeout(() => {
-            deleteNodes(ids, true);
-            setPendingDeletions(null);
-        }, 5000);
-
-        setPendingDeletions({ ids, timeoutId });
         setDeleteConfirmOpen(false);
         setDeleteConfirmIds([]);
 
@@ -360,20 +405,20 @@ export function App() {
             timeout: 5000,
             shouldShowTimeoutProgress: true,
             endContent: (
-                <Button size="sm" variant="flat" onPress={handleUndoDelete}>
+                <Button size="sm" variant="flat" onPress={undoDelete ?? history.undo}>
                     {t('toast.undo')}
                 </Button>
             ),
         });
-    }, [deleteConfirmIds, deleteNodes, handleUndoDelete, selection, t]);
+    }, [applyTrashChange, currentView, deleteConfirmIds, deleteNodes, history.undo, selection, t]);
 
     // 重命名提交
     const handleRenameSubmit = useCallback((id: string, newTitle: string) => {
         if (newTitle.trim()) {
-            updateNode(id, { title: newTitle.trim() });
+            applyNodeUpdates([{ id, patch: { title: newTitle.trim() } }], { mergeKey: 'title' });
         }
         setRenamingId(null);
-    }, [updateNode]);
+    }, [applyNodeUpdates]);
 
     // 重命名取消
     const handleRenameCancel = useCallback(() => {
@@ -408,19 +453,24 @@ export function App() {
     );
 
     const getDragNodeIds = useCallback((activeId: string): string[] => {
-        if (searchQuery) return [activeId];
+        if (!isSortableView) return [activeId];
         if (!selection.selectedIds.has(activeId)) return [activeId];
         const visibleIndex = new Map(visibleNodes.map((n, i) => [n.id, i]));
         return Array.from(selection.selectedIds).sort((a, b) => {
             return (visibleIndex.get(a) ?? 0) - (visibleIndex.get(b) ?? 0);
         });
-    }, [searchQuery, selection.selectedIds, visibleNodes]);
+    }, [isSortableView, selection.selectedIds, visibleNodes]);
 
     const handleDragStart = useCallback((event: DragStartEvent) => {
+        if (!isSortableView) return;
         setActiveDragId(String(event.active.id));
-    }, []);
+    }, [isSortableView]);
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
+        if (!isSortableView) {
+            setActiveDragId(null);
+            return;
+        }
         const activeId = String(event.active.id);
         const overId = event.over?.id ? String(event.over.id) : null;
         setActiveDragId(null);
@@ -467,7 +517,7 @@ export function App() {
         } else {
             moveNodes({ nodeIds, toParentId: currentFolderId, beforeId: overId });
         }
-    }, [currentChildren, currentFolderId, getDragNodeIds, moveNodes, nodes, searchQuery]);
+    }, [currentChildren, currentFolderId, getDragNodeIds, isSortableView, moveNodes, nodes, searchQuery]);
 
     // 导入 HTML
     const handleImport = useCallback(async (files: FileList) => {
@@ -516,10 +566,61 @@ export function App() {
         }
     }, [nodes, currentFolderId, selection.selectedIds]);
 
+    type UpdatePatch = Parameters<typeof updateNode>[1];
+    type UpdateEntry = { id: string; patch: UpdatePatch };
+
+    const applyNodeUpdates = useCallback((updates: UpdateEntry[], options?: { mergeKey?: string; label?: string }) => {
+        const normalized: Array<{ id: string; patch: UpdatePatch; before: UpdatePatch }> = [];
+
+        updates.forEach(({ id, patch }) => {
+            const node = nodes[id];
+            if (!node) return;
+
+            const diff: UpdatePatch = {};
+            const before: UpdatePatch = {};
+
+            (Object.keys(patch) as Array<keyof UpdatePatch>).forEach((key) => {
+                const nextValue = patch[key];
+                const prevValue = node[key as keyof Node] as UpdatePatch[keyof UpdatePatch];
+                if (prevValue !== nextValue) {
+                    diff[key] = nextValue;
+                    before[key] = prevValue;
+                }
+            });
+
+            if (Object.keys(diff).length > 0) {
+                normalized.push({ id, patch: diff, before });
+            }
+        });
+
+        if (normalized.length === 0) return;
+
+        normalized.forEach(({ id, patch }) => updateNode(id, patch));
+
+        const mergeKey = options?.mergeKey && normalized.length === 1
+            ? `${options.mergeKey}:${normalized[0].id}`
+            : options?.mergeKey;
+
+        history.record({
+            label: options?.label,
+            mergeKey,
+            undo: () => {
+                normalized.forEach(({ id, before }) => updateNode(id, before));
+            },
+            redo: () => {
+                normalized.forEach(({ id, patch }) => updateNode(id, patch));
+            },
+        });
+    }, [history, nodes, updateNode]);
+
     // 更新节点
     const handleUpdateNode = useCallback((id: string, updates: Parameters<typeof updateNode>[1]) => {
-        updateNode(id, updates);
-    }, [updateNode]);
+        const keys = Object.keys(updates);
+        const mergeKey = keys.length === 1 && (keys[0] === 'title' || keys[0] === 'url')
+            ? keys[0]
+            : undefined;
+        applyNodeUpdates([{ id, patch: updates }], { mergeKey });
+    }, [applyNodeUpdates]);
 
     // 展开/收起文件夹
     const handleToggleExpand = useCallback((id: string) => {
@@ -548,21 +649,41 @@ export function App() {
     const handleFavorite = useCallback(() => {
         if (selection.selectedIds.size === 0) return;
         const ids = Array.from(selection.selectedIds);
-        ids.forEach(id => {
-            updateNode(id, { isFavorite: true });
+        const shouldFavorite = !ids.every(id => nodes[id]?.isFavorite);
+        const updates = ids
+            .filter(id => nodes[id])
+            .map(id => ({ id, patch: { isFavorite: shouldFavorite } }));
+        applyNodeUpdates(updates, { label: 'favorite' });
+        addToast({
+            title: shouldFavorite ? t('toast.favorited') : t('toast.unfavorited'),
+            color: 'success',
+            timeout: 3000,
         });
-        addToast({ title: t('toast.favorited'), color: 'success', timeout: 3000 });
-    }, [selection, updateNode, t]);
+    }, [applyNodeUpdates, nodes, selection, t]);
 
     // 添加到稍后阅读
     const handleReadLater = useCallback(() => {
         if (selection.selectedIds.size === 0) return;
         const ids = Array.from(selection.selectedIds);
-        ids.forEach(id => {
-            updateNode(id, { isReadLater: true });
+        const shouldReadLater = !ids.every(id => nodes[id]?.isReadLater);
+        const updates = ids
+            .filter(id => nodes[id])
+            .map(id => ({ id, patch: { isReadLater: shouldReadLater } }));
+        applyNodeUpdates(updates, { label: 'read-later' });
+        addToast({
+            title: shouldReadLater ? t('toast.readLaterAdded') : t('toast.readLaterRemoved'),
+            color: 'success',
+            timeout: 3000,
         });
-        addToast({ title: t('toast.readLaterAdded'), color: 'success', timeout: 3000 });
-    }, [selection, updateNode, t]);
+    }, [applyNodeUpdates, nodes, selection, t]);
+
+    const handleRestore = useCallback(() => {
+        if (selection.selectedIds.size === 0) return;
+        const ids = Array.from(selection.selectedIds);
+        applyTrashChange(ids, 'restore');
+        selection.clearSelection();
+        addToast({ title: t('toast.restored', { count: ids.length }), color: 'success', timeout: 3000 });
+    }, [applyTrashChange, selection, t]);
 
     // 导航到收藏夹
     const handleNavigateToFavorites = useCallback(() => {
@@ -589,16 +710,20 @@ export function App() {
     }, [handleNavigate]);
 
     // 选择处理
-    const handleSelect = useCallback((id: string, keys: ModifierKeys) => {
+    const handleSelect = useCallback((id: string, keys: ModifierKeys, options?: { forceToggle?: boolean }) => {
         if (viewMode === 'list' && keys.shiftKey) {
             selection.selectRange(id);
-        } else if (keys.metaKey || keys.ctrlKey) {
-            selection.toggleSelect(id);
-        } else {
-            selection.selectOne(id);
-            setInspectorOpen(true);
+            return;
         }
-    }, [selection, viewMode]);
+
+        const shouldToggle = options?.forceToggle || keys.metaKey || keys.ctrlKey || selectionMode;
+        if (shouldToggle) {
+            selection.toggleSelect(id);
+            return;
+        }
+
+        selection.selectOne(id);
+    }, [selection, selectionMode, viewMode]);
 
     // 键盘快捷键
     useKeyboardShortcuts({
@@ -611,6 +736,8 @@ export function App() {
             }
         },
         onSelectAll: selection.selectAll,
+        onUndo: history.undo,
+        onRedo: history.redo,
         onEscape: () => {
             if (renamingId) {
                 setRenamingId(null);
@@ -694,6 +821,12 @@ export function App() {
                             onSelectAll={selection.selectAll}
                             onClearSelection={selection.clearSelection}
                             onInvertSelection={selection.invertSelection}
+                            selectionMode={selectionMode}
+                            onToggleSelectionMode={() => setSelectionMode((prev) => !prev)}
+                            onUndo={history.undo}
+                            onRedo={history.redo}
+                            canUndo={history.canUndo}
+                            canRedo={history.canRedo}
                             viewMode={viewMode}
                             onViewModeChange={setViewMode}
                         />
@@ -705,6 +838,8 @@ export function App() {
                             folderId={currentFolderId}
                             viewMode={viewMode}
                             isDragging={!!activeDragId}
+                            isSortable={isSortableView}
+                            selectionMode={selectionMode}
                             selectedIds={selection.selectedIds}
                             renamingId={renamingId}
                             searchQuery={searchQuery}
@@ -721,21 +856,20 @@ export function App() {
                     <div
                         className="h-full overflow-hidden transition-[width] duration-200 ease-out"
                         style={{
-                            width: inspectorOpen && selection.selectedIds.size > 0
-                                ? 'var(--inspector-width)'
-                                : '0px',
+                            width: inspectorOpen ? 'var(--inspector-width)' : '0px',
                         }}
                     >
                         <div
                             className="h-full transition-opacity duration-200"
                             style={{
-                                opacity: inspectorOpen && selection.selectedIds.size > 0 ? 1 : 0,
-                                pointerEvents: inspectorOpen && selection.selectedIds.size > 0 ? 'auto' : 'none',
+                                opacity: inspectorOpen ? 1 : 0,
+                                pointerEvents: inspectorOpen ? 'auto' : 'none',
                             }}
                         >
                             <Inspector
                                 nodes={nodes}
                                 selectedIds={selection.selectedIds}
+                                fallbackId={currentView === 'bookmarks' ? currentFolderId : undefined}
                                 customColors={customColors}
                                 onUpdate={handleUpdateNode}
                                 onClose={() => setInspectorOpen(false)}
@@ -758,9 +892,11 @@ export function App() {
                 {/* Floating Selection Toolbar */}
                 <SelectionToolbar
                     selectedCount={selection.selectedIds.size}
+                    currentView={currentView}
                     onFavorite={handleFavorite}
                     onReadLater={handleReadLater}
                     onDelete={handleDelete}
+                    onRestore={handleRestore}
                     onClear={selection.clearSelection}
                 />
 

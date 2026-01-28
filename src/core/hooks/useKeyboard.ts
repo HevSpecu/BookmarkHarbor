@@ -59,6 +59,16 @@ export interface KeyboardShortcuts {
      * 剪切（Ctrl/Cmd + X）
      */
     onCut?: () => void;
+
+    /**
+     * 撤销（Ctrl/Cmd + Z）
+     */
+    onUndo?: () => void;
+
+    /**
+     * 重做（Ctrl/Cmd + Shift + Z）
+     */
+    onRedo?: () => void;
 }
 
 export interface UseKeyboardShortcutsOptions extends KeyboardShortcuts {
@@ -167,6 +177,17 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions): void
         if (isMod && e.key === 'x') {
             e.preventDefault();
             opts.onCut?.();
+            return;
+        }
+
+        // Ctrl/Cmd + Z 撤销 / Ctrl/Cmd + Shift + Z 重做
+        if (isMod && (e.key === 'z' || e.key === 'Z')) {
+            e.preventDefault();
+            if (e.shiftKey) {
+                opts.onRedo?.();
+            } else {
+                opts.onUndo?.();
+            }
             return;
         }
 

@@ -21,6 +21,7 @@
         "export": "Export",
         "delete": "Delete",
         "selection": "Selection",
+        "selectionMode": "Selection Mode",
         "selectAll": "Select All",
         "clearSelection": "Clear Selection",
         "invertSelection": "Invert Selection",
@@ -145,17 +146,23 @@
         "selected": "Selected",
         "favorite": "Favorite",
         "readLater": "Later",
+        "restore": "Restore",
+        "deletePermanent": "Delete Permanently",
         "delete": "Delete"
     },
     "toast": {
         "copied": "Copied to clipboard",
         "saved": "Saved",
         "deleted": "Deleted {{count}} item(s)",
+        "deletedPermanent": "Permanently deleted {{count}} item(s)",
         "moved": "Moved",
         "renamed": "Renamed",
         "undo": "Undo",
         "favorited": "Added to favorites",
-        "readLaterAdded": "Added to read later"
+        "unfavorited": "Removed from favorites",
+        "readLaterAdded": "Added to read later",
+        "readLaterRemoved": "Removed from read later",
+        "restored": "Restored {{count}} item(s)"
     },
     "aria": {
         "toggleSidebar": "Toggle sidebar",
@@ -163,6 +170,7 @@
         "switchLanguage": "Switch language",
         "switchTheme": "Switch theme",
         "clearSearch": "Clear search",
+        "breadcrumbOverflow": "Show collapsed path",
         "listView": "List view",
         "cardView": "Card view",
         "tileView": "Tile view",

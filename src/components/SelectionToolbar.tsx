@@ -9,20 +9,25 @@ import { useTranslation } from 'react-i18next';
 
 interface SelectionToolbarProps {
     selectedCount: number;
+    currentView?: 'bookmarks' | 'favorites' | 'readLater' | 'trash';
     onFavorite: () => void;
     onReadLater: () => void;
     onDelete: () => void;
+    onRestore?: () => void;
     onClear: () => void;
 }
 
 export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
     selectedCount,
+    currentView = 'bookmarks',
     onFavorite,
     onReadLater,
     onDelete,
+    onRestore,
     onClear,
 }) => {
     const { t } = useTranslation();
+    const isTrash = currentView === 'trash';
 
     if (selectedCount === 0) return null;
 
@@ -37,29 +42,43 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
 
                 <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
 
-                {/* Favorite button */}
-                <Button
-                    variant="light"
-                    size="sm"
-                    startContent={<Icon icon="lucide:star" className="w-4 h-4" aria-hidden="true" />}
-                    onPress={onFavorite}
-                    className="text-gray-600 dark:text-gray-300"
-                >
-                    {t('selection.favorite')}
-                </Button>
+                {!isTrash && (
+                    <Button
+                        variant="light"
+                        size="sm"
+                        startContent={<Icon icon="lucide:star" className="w-4 h-4" aria-hidden="true" />}
+                        onPress={onFavorite}
+                        className="text-gray-600 dark:text-gray-300"
+                    >
+                        {t('selection.favorite')}
+                    </Button>
+                )}
 
-                {/* Read Later button */}
-                <Button
-                    variant="light"
-                    size="sm"
-                    startContent={<Icon icon="lucide:clock" className="w-4 h-4" aria-hidden="true" />}
-                    onPress={onReadLater}
-                    className="text-gray-600 dark:text-gray-300"
-                >
-                    {t('selection.readLater')}
-                </Button>
+                {!isTrash && (
+                    <Button
+                        variant="light"
+                        size="sm"
+                        startContent={<Icon icon="lucide:clock" className="w-4 h-4" aria-hidden="true" />}
+                        onPress={onReadLater}
+                        className="text-gray-600 dark:text-gray-300"
+                    >
+                        {t('selection.readLater')}
+                    </Button>
+                )}
 
-                {/* Delete button */}
+                {isTrash && (
+                    <Button
+                        variant="light"
+                        size="sm"
+                        startContent={<Icon icon="lucide:rotate-ccw" className="w-4 h-4" aria-hidden="true" />}
+                        onPress={onRestore}
+                        isDisabled={!onRestore}
+                        className="text-gray-600 dark:text-gray-300"
+                    >
+                        {t('selection.restore')}
+                    </Button>
+                )}
+
                 <Button
                     variant="light"
                     size="sm"
@@ -67,7 +86,7 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
                     startContent={<Icon icon="lucide:trash-2" className="w-4 h-4" aria-hidden="true" />}
                     onPress={onDelete}
                 >
-                    {t('selection.delete')}
+                    {isTrash ? t('selection.deletePermanent') : t('selection.delete')}
                 </Button>
 
                 <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />

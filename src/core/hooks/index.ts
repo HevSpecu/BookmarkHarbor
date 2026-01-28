@@ -29,3 +29,10 @@ export {
     type UseKeyboardShortcutsOptions,
     type RenameKeyboardHandlers,
 } from './useKeyboard';
+
+export {
+    useHistory,
+    type HistoryEntry,
+    type UseHistoryOptions,
+    type UseHistoryReturn,
+} from './useHistory';

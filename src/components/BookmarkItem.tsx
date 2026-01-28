@@ -21,7 +21,10 @@ interface BookmarkItemProps {
     isSelected: boolean;
     viewMode: 'list' | 'card' | 'tile';
     isRenaming: boolean;
+    selectionMode: boolean;
+    hasSelection: boolean;
     onSelect: (keys: ModifierKeys) => void;
+    onToggleSelect: () => void;
     onDoubleClick: () => void;
     onRenameSubmit: (newTitle: string) => void;
     onRenameCancel: () => void;
@@ -43,7 +46,10 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     isSelected,
     viewMode,
     isRenaming,
+    selectionMode,
+    hasSelection,
     onSelect,
+    onToggleSelect,
     onDoubleClick,
     onRenameSubmit,
     onRenameCancel,
@@ -53,6 +59,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
 }) => {
     const { t } = useTranslation();
     const [renameValue, setRenameValue] = useState(node.title);
+    const [isHovered, setIsHovered] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const ignoreBlurRef = useRef(false);
 
@@ -77,6 +84,38 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
 
     const isFolder = node.type === 'folder';
     const folderColor = getFolderColor(node.id, node.color);
+    const showSelectionToggle = !isRenaming && (selectionMode || isSelected || (hasSelection && isHovered));
+
+    const renderSelectionToggle = (className?: string) => {
+        return (
+            <button
+                type="button"
+                onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onToggleSelect();
+                }}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
+                aria-pressed={isSelected}
+                aria-hidden={!showSelectionToggle}
+                tabIndex={showSelectionToggle ? 0 : -1}
+                disabled={!showSelectionToggle}
+                className={cn(
+                    'w-5 h-5 rounded-md flex items-center justify-center border transition-colors',
+                    isSelected
+                        ? 'bg-[rgb(var(--color-primary-500-rgb))] border-[rgb(var(--color-primary-500-rgb))] text-white shadow-sm'
+                        : 'bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-600 text-transparent hover:border-[rgb(var(--color-primary-500-rgb))]',
+                    showSelectionToggle ? 'opacity-100' : 'opacity-0 pointer-events-none',
+                    className
+                )}
+            >
+                <Icon icon="lucide:check" className={cn('w-3 h-3', isSelected ? 'text-white' : 'text-transparent')} aria-hidden="true" />
+            </button>
+        );
+    };
 
     // Helper to get preview grid dimensions
     const getPreviewGrid = () => {
@@ -94,6 +133,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
             <Card
                 isHoverable={!isRenaming}
                 isBlurred
+                onPointerEnter={() => setIsHovered(true)}
+                onPointerLeave={() => setIsHovered(false)}
                 onPointerDown={(e) => {
                     if (isRenaming) return;
                     if (e.button !== 0) return;
@@ -107,7 +148,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 className={cn(
                     'h-16 w-full transition-all transition-transform border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
-                    isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-50-rgb)_/_0.8)] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.3)]'
+                    isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-100-rgb)_/_0.8)] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.35)]'
                 )}
             >
                 <CardBody className="flex flex-row items-center gap-3 p-3">
@@ -180,11 +221,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     </div>
 
                     {/* Selected indicator */}
-                    {isSelected && (
-                        <div className="w-5 h-5 rounded-md bg-[rgb(var(--color-primary-500-rgb))] flex items-center justify-center flex-shrink-0">
-                            <Icon icon="lucide:check" className="w-3 h-3 text-white" aria-hidden="true" />
-                        </div>
-                    )}
+                    {renderSelectionToggle('flex-shrink-0')}
                 </CardBody>
             </Card>
         );
@@ -200,6 +237,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
             <Card
                 isHoverable={!isRenaming}
                 isBlurred
+                onPointerEnter={() => setIsHovered(true)}
+                onPointerLeave={() => setIsHovered(false)}
                 onPointerDown={(e) => {
                     if (isRenaming) return;
                     if (e.button !== 0) return;
@@ -213,7 +252,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 className={cn(
                     'overflow-hidden w-full transition-all transition-transform border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
-                    isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-50-rgb)_/_0.8)] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.3)]'
+                    isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-100-rgb)_/_0.8)] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.35)]'
                 )}
             >
                 {/* Folder preview grid or empty state */}
@@ -300,13 +339,9 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 </CardBody>
 
                 {/* Selected indicator */}
-                {isSelected && (
-                    <div className="absolute top-2 left-2">
-                        <div className="w-5 h-5 rounded-md bg-[rgb(var(--color-primary-500-rgb))] flex items-center justify-center shadow-lg">
-                            <Icon icon="lucide:check" className="w-3 h-3 text-white" aria-hidden="true" />
-                        </div>
-                    </div>
-                )}
+                <div className="absolute top-2 left-2">
+                    {renderSelectionToggle()}
+                </div>
             </Card>
         );
     }
@@ -317,6 +352,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
             <Card
                 isHoverable={!isRenaming}
                 isBlurred
+                onPointerEnter={() => setIsHovered(true)}
+                onPointerLeave={() => setIsHovered(false)}
                 onPointerDown={(e) => {
                     if (isRenaming) return;
                     if (e.button !== 0) return;
@@ -342,13 +379,9 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                                 : `linear-gradient(135deg, ${node.color || '#6366f1'}, ${node.color ? node.color + '88' : '#8b5cf6'})`,
                         }}
                     >
-                        {isSelected && (
-                            <div className="absolute top-2 left-2">
-                                <div className="w-5 h-5 rounded-md bg-[rgb(var(--color-primary-500-rgb))] flex items-center justify-center shadow-lg">
-                                    <Icon icon="lucide:check" className="w-3 h-3 text-white" aria-hidden="true" />
-                                </div>
-                            </div>
-                        )}
+                        <div className="absolute top-2 left-2">
+                            {renderSelectionToggle()}
+                        </div>
                         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
                     </div>
                 </CardBody>
@@ -416,7 +449,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 className={cn(
                     'group flex items-center p-2 h-12 rounded-lg transition-all cursor-pointer',
                     isSelected
-                        ? 'bg-[rgb(var(--color-primary-50-rgb))] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.2)] ring-1 ring-[rgb(var(--color-primary-500-rgb))]'
+                        ? 'bg-[rgb(var(--color-primary-100-rgb))] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.25)] ring-1 ring-[rgb(var(--color-primary-500-rgb))]'
                         : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                 )}
             >
@@ -485,6 +518,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
         <div
             role="button"
             tabIndex={0}
+            onPointerEnter={() => setIsHovered(true)}
+            onPointerLeave={() => setIsHovered(false)}
             onPointerDown={(e) => {
                 if (e.button !== 0) return;
                 onSelect({
@@ -503,7 +538,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
             className={cn(
                 'group flex items-center p-2 h-12 rounded-lg transition-all cursor-pointer w-full text-left',
                 isSelected
-                    ? 'bg-[rgb(var(--color-primary-50-rgb))] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.2)] ring-1 ring-[rgb(var(--color-primary-500-rgb))]'
+                    ? 'bg-[rgb(var(--color-primary-100-rgb))] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.25)] ring-1 ring-[rgb(var(--color-primary-500-rgb))]'
                     : 'hover:bg-gray-50 dark:hover:bg-gray-800'
             )}
         >
@@ -560,9 +595,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
 
             {/* 选中指示器 */}
             <div className="w-6 flex items-center justify-center ml-2">
-                {isSelected && (
-                    <Icon icon="lucide:check" className="w-4 h-4 text-[rgb(var(--color-primary-500-rgb))]" aria-hidden="true" />
-                )}
+                {renderSelectionToggle()}
             </div>
         </div>
     );

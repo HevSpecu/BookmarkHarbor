@@ -32,6 +32,8 @@ interface ToolbarProps {
     onSelectAll?: () => void;
     onClearSelection?: () => void;
     onInvertSelection?: () => void;
+    selectionMode?: boolean;
+    onToggleSelectionMode?: () => void;
     onUndo?: () => void;
     onRedo?: () => void;
     canUndo?: boolean;
@@ -51,6 +53,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     onSelectAll,
     onClearSelection,
     onInvertSelection,
+    selectionMode = false,
+    onToggleSelectionMode,
     onUndo,
     onRedo,
     canUndo = false,
@@ -62,6 +66,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     onSortChange,
 }) => {
     const { t } = useTranslation();
+    const maxBreadcrumbItems = 4;
+    const itemsBeforeCollapse = 1;
+    const itemsAfterCollapse = 2;
+    const shouldCollapse = breadcrumbs.length > maxBreadcrumbItems;
+    const collapsedItems = shouldCollapse
+        ? breadcrumbs.slice(itemsBeforeCollapse, breadcrumbs.length - itemsAfterCollapse)
+        : [];
+    const visibleStart = shouldCollapse ? breadcrumbs.slice(0, itemsBeforeCollapse) : breadcrumbs;
+    const visibleEnd = shouldCollapse ? breadcrumbs.slice(-itemsAfterCollapse) : [];
 
     const handleSortFieldChange = useCallback((field: SortField) => {
         onSortChange?.(field, sortOrder);
@@ -76,13 +89,50 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             {/* Left button group */}
             <div className="flex min-w-0">
                 <Breadcrumbs size="sm">
-                    {breadcrumbs.map((crumb, index) => (
+                    {visibleStart.map((crumb, index) => (
                         <BreadcrumbItem
                             key={crumb.id}
                             onPress={() => onNavigate(crumb.id)}
-                            isCurrent={index === breadcrumbs.length - 1}
+                            isCurrent={crumb.id === breadcrumbs[breadcrumbs.length - 1]?.id}
                         >
                             {index === 0 ? t('app.allBookmarks') : crumb.title}
+                        </BreadcrumbItem>
+                    ))}
+
+                    {shouldCollapse && (
+                        <BreadcrumbItem>
+                            <Dropdown>
+                                <DropdownTrigger>
+                                    <Button
+                                        isIconOnly
+                                        variant="light"
+                                        size="sm"
+                                        aria-label={t('aria.breadcrumbOverflow')}
+                                    >
+                                        <Icon icon="lucide:more-horizontal" className="w-4 h-4" aria-hidden="true" />
+                                    </Button>
+                                </DropdownTrigger>
+                                <DropdownMenu
+                                    aria-label={t('aria.breadcrumbOverflow')}
+                                    onAction={(key) => onNavigate(String(key))}
+                                >
+                                    {collapsedItems.slice().reverse().map((crumb) => (
+                                        <DropdownItem key={crumb.id}>
+                                            {crumb.title}
+                                        </DropdownItem>
+                                    ))}
+                                </DropdownMenu>
+                            </Dropdown>
+                        </BreadcrumbItem>
+                    )}
+
+                    {visibleEnd.map((crumb) => (
+                        <BreadcrumbItem
+                            key={crumb.id}
+                            onPress={() => onNavigate(crumb.id)}
+                            isCurrent={crumb.id === breadcrumbs[breadcrumbs.length - 1]?.id}
+                        >
+                            {crumb.title}
                         </BreadcrumbItem>
                     ))}
                 </Breadcrumbs>
@@ -103,6 +153,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                         </Button>
                     </DropdownTrigger>
                     <DropdownMenu aria-label="Selection options">
+                        <DropdownItem
+                            key="selectionMode"
+                            startContent={<Icon icon="lucide:mouse-pointer-2" className="w-4 h-4" />}
+                            endContent={selectionMode ? <Icon icon="lucide:check" className="w-4 h-4" /> : null}
+                            onPress={onToggleSelectionMode}
+                        >
+                            {t('toolbar.selectionMode')}
+                        </DropdownItem>
                         <DropdownItem
                             key="selectAll"
                             startContent={<Icon icon="lucide:check-check" className="w-4 h-4" />}

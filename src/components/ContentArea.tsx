@@ -25,11 +25,13 @@ interface ContentAreaProps {
     folderId: string;
     viewMode: ViewMode;
     isDragging: boolean;
+    isSortable: boolean;
+    selectionMode: boolean;
     selectedIds: Set<string>;
     renamingId: string | null;
     searchQuery: string;
     cardFolderPreviewSize: CardFolderPreviewSize;
-    onSelect: (id: string, keys: ModifierKeys) => void;
+    onSelect: (id: string, keys: ModifierKeys, options?: { forceToggle?: boolean }) => void;
     onDoubleClick: (node: Node) => void;
     onClearSelection: () => void;
     onRenameSubmit: (id: string, newTitle: string) => void;
@@ -42,6 +44,8 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     folderId,
     viewMode,
     isDragging,
+    isSortable,
+    selectionMode,
     selectedIds,
     renamingId,
     searchQuery,
@@ -53,6 +57,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     onRenameCancel,
 }) => {
     const { t } = useTranslation();
+    const hasSelection = selectedIds.size > 0;
 
     const { setNodeRef } = useDroppable({
         id: `content:${folderId}`,
@@ -108,8 +113,8 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
         );
     }
 
-    const renderNode = (node: Node, isSearching: boolean) => {
-        if (isSearching) {
+    const renderNode = (node: Node, isReadOnly: boolean) => {
+        if (isReadOnly) {
             return (
                 <BookmarkItem
                     key={node.id}
@@ -117,7 +122,10 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                     isSelected={selectedIds.has(node.id)}
                     viewMode={viewMode}
                     isRenaming={renamingId === node.id}
+                    selectionMode={selectionMode}
+                    hasSelection={hasSelection}
                     onSelect={(keys) => onSelect(node.id, keys)}
+                    onToggleSelect={() => onSelect(node.id, { shiftKey: false, metaKey: false, ctrlKey: false }, { forceToggle: true })}
                     onDoubleClick={() => onDoubleClick(node)}
                     onRenameSubmit={(newTitle) => onRenameSubmit(node.id, newTitle)}
                     onRenameCancel={onRenameCancel}
@@ -135,6 +143,8 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                 isSelected={selectedIds.has(node.id)}
                 viewMode={viewMode}
                 isRenaming={renamingId === node.id}
+                selectionMode={selectionMode}
+                hasSelection={hasSelection}
                 onSelect={onSelect}
                 onDoubleClick={onDoubleClick}
                 onRenameSubmit={onRenameSubmit}
@@ -235,7 +245,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                             )}
                             {folders.map((node) => (
                                 <motion.div key={node.id} layout="position" transition={layoutTransition}>
-                                    {renderNode(node, false)}
+                                    {renderNode(node, !isSortable)}
                                 </motion.div>
                             ))}
 
@@ -254,7 +264,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                             )}
                             {bookmarks.map((node) => (
                                 <motion.div key={node.id} layout="position" transition={layoutTransition}>
-                                    {renderNode(node, false)}
+                                    {renderNode(node, !isSortable)}
                                 </motion.div>
                             ))}
                         </motion.div>
@@ -272,7 +282,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                                 {t('content.subfolders')}
                             </h2>
                         )}
-                        {folders.map((node) => renderNode(node, false))}
+                        {folders.map((node) => renderNode(node, !isSortable))}
 
                         {/* BOOKMARKS Section */}
                         {bookmarks.length > 0 && viewMode !== 'list' && (
@@ -280,7 +290,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                                 {t('content.bookmarks')}
                             </h2>
                         )}
-                        {bookmarks.map((node) => renderNode(node, false))}
+                        {bookmarks.map((node) => renderNode(node, !isSortable))}
                     </div>
                 )}
             </SortableContext>

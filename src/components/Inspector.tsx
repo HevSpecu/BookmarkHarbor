@@ -26,6 +26,7 @@ const PRESET_COLORS = [
 interface InspectorProps {
     nodes: Record<string, Node>;
     selectedIds: Set<string>;
+    fallbackId?: string;
     customColors: string[];
     onUpdate: (id: string, updates: UpdateNodeRequest) => void;
     onClose: () => void;
@@ -35,6 +36,7 @@ interface InspectorProps {
 export const Inspector: React.FC<InspectorProps> = ({
     nodes,
     selectedIds,
+    fallbackId,
     customColors,
     onUpdate,
     onClose,
@@ -50,7 +52,7 @@ export const Inspector: React.FC<InspectorProps> = ({
 
     // 获取第一个选中的项目
     const firstId = Array.from(selectedIds)[0];
-    const item = firstId ? nodes[firstId] : null;
+    const item = firstId ? nodes[firstId] : (fallbackId ? nodes[fallbackId] : null);
 
     const handleCoverUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -127,7 +129,7 @@ export const Inspector: React.FC<InspectorProps> = ({
         }
     }, [item, onUpdate]);
 
-    if (selectedIds.size === 0 || !item) {
+    if (!item) {
         return null;
     }
 
