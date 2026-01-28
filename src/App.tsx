@@ -370,7 +370,7 @@ export function App() {
     });
 
     return (
-        <div className="flex h-screen w-full flex-col bg-white dark:bg-gray-900">
+        <div className="flex h-screen w-full flex-col bg-slate-50 dark:bg-slate-900">
             <a
                 href="#main"
                 className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-2 focus:rounded-md focus:bg-white focus:text-gray-900 dark:focus:bg-gray-900 dark:focus:text-white focus:ring-2 focus:ring-primary-500"
@@ -418,7 +418,7 @@ export function App() {
                 )}
 
                 {/* 主区域 */}
-                <main id="main" tabIndex={-1} className="flex-1 flex flex-col bg-white dark:bg-gray-900 relative">
+                <main id="main" tabIndex={-1} className="flex-1 flex flex-col bg-white dark:bg-slate-900 relative">
                     {/* 工具栏 */}
                     <Toolbar
                         onNewFolder={handleNewFolder}

@@ -63,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
     const currentThemeIcon = theme === 'dark' ? 'lucide:moon' : theme === 'light' ? 'lucide:sun' : 'lucide:monitor';
 
     return (
-        <header className="flex h-16 items-center justify-between border-b border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 px-4 transition-colors">
+        <header className="flex h-14 items-center justify-between border-b border-gray-200/80 dark:border-white/5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-4 transition-colors">
             {/* 左侧 */}
             <div className="flex items-center gap-4">
                 {/* 侧边栏切换 */}
