@@ -2,7 +2,7 @@
  * Header 组件 - 顶部导航栏（使用 HeroUI）
  */
 
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
     Button,
     Input,
@@ -10,27 +10,15 @@ import {
     DropdownTrigger,
     DropdownMenu,
     DropdownItem,
-    ButtonGroup,
-    Breadcrumbs,
-    BreadcrumbItem,
 } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
-import type { ViewMode, Theme, Locale } from '../core/types';
-import { cn } from '../core/utils';
-
-interface BreadcrumbItemData {
-    id: string;
-    title: string;
-}
+import type { Theme, Locale, ExportScope } from '../core/types';
 
 interface HeaderProps {
-    breadcrumbs: BreadcrumbItemData[];
     searchQuery: string;
     onSearchChange: (query: string) => void;
     searchInputRef: React.RefObject<HTMLInputElement>;
-    viewMode: ViewMode;
-    onViewModeChange: (mode: ViewMode) => void;
     theme: Theme;
     onThemeChange: (theme: Theme) => void;
     locale: Locale;
@@ -39,16 +27,16 @@ interface HeaderProps {
     onSidebarToggle: () => void;
     inspectorOpen: boolean;
     onInspectorToggle: () => void;
-    onNavigate: (folderId: string) => void;
+    onNewFolder: () => void;
+    onNewBookmark: () => void;
+    onImport: (files: FileList) => void;
+    onExport: (scope: ExportScope) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-    breadcrumbs,
     searchQuery,
     onSearchChange,
     searchInputRef,
-    viewMode,
-    onViewModeChange,
     theme,
     onThemeChange,
     locale,
@@ -57,11 +45,27 @@ export const Header: React.FC<HeaderProps> = ({
     onSidebarToggle,
     inspectorOpen,
     onInspectorToggle,
-    onNavigate,
+    onNewFolder,
+    onNewBookmark,
+    onImport,
+    onExport,
 }) => {
     const { t } = useTranslation();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const currentThemeIcon = theme === 'dark' ? 'lucide:moon' : theme === 'light' ? 'lucide:sun' : 'lucide:monitor';
+
+    const handleImportClick = useCallback(() => {
+        fileInputRef.current?.click();
+    }, []);
+
+    const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            onImport(files);
+            e.target.value = '';
+        }
+    }, [onImport]);
 
     return (
         <header className="flex h-14 items-center justify-between border-b border-gray-200/80 dark:border-white/5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-4 transition-colors">
@@ -79,18 +83,26 @@ export const Header: React.FC<HeaderProps> = ({
                     <Icon icon="lucide:panel-left" className="h-5 w-5" aria-hidden="true" />
                 </Button>
 
-                {/* 面包屑 */}
-                <Breadcrumbs size="sm">
-                    {breadcrumbs.map((crumb, index) => (
-                        <BreadcrumbItem
-                            key={crumb.id}
-                            onPress={() => onNavigate(crumb.id)}
-                            isCurrent={index === breadcrumbs.length - 1}
-                        >
-                            {index === 0 ? t('app.allBookmarks') : crumb.title}
-                        </BreadcrumbItem>
-                    ))}
-                </Breadcrumbs>
+                {/* 新建 */}
+                <div className="flex gap-2">
+                    <Button
+                        variant="flat"
+                        size="sm"
+                        startContent={<Icon icon="lucide:folder-plus" className="w-4 h-4" aria-hidden="true" />}
+                        onPress={onNewFolder}
+                        className="bg-gray-100 dark:bg-gray-800"
+                    >
+                        {t('toolbar.newFolder')}
+                    </Button>
+                    <Button
+                        size="sm"
+                        startContent={<Icon icon="lucide:plus" className="w-4 h-4" aria-hidden="true" />}
+                        onPress={onNewBookmark}
+                        className="bg-[var(--color-primary)] text-white hover:opacity-90 shadow-[0_8px_24px_rgba(var(--color-primary-rgb),0.25)]"
+                    >
+                        {t('toolbar.newBookmark')}
+                    </Button>
+                </div>
             </div>
 
             {/* 中间搜索框 */}
@@ -179,51 +191,49 @@ export const Header: React.FC<HeaderProps> = ({
 
                 <div className="h-6 w-px bg-gray-200 dark:bg-white/10 mx-2" />
 
-                {/* 视图切换 */}
-                <ButtonGroup size="sm">
-                    <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => onViewModeChange('list')}
-                        aria-label={t('aria.listView')}
-                        className={cn(
-                            'transition-colors',
-                            viewMode === 'list'
-                                ? 'bg-[var(--color-primary)] text-white'
-                                : 'text-gray-600 dark:text-gray-400'
-                        )}
-                    >
-                        <Icon icon="lucide:list" className="h-4 w-4" aria-hidden="true" />
-                    </Button>
-                    <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => onViewModeChange('card')}
-                        aria-label={t('aria.cardView')}
-                        className={cn(
-                            'transition-colors',
-                            viewMode === 'card'
-                                ? 'bg-[var(--color-primary)] text-white'
-                                : 'text-gray-600 dark:text-gray-400'
-                        )}
-                    >
-                        <Icon icon="lucide:grid-2x2" className="h-4 w-4" aria-hidden="true" />
-                    </Button>
-                    <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => onViewModeChange('tile')}
-                        aria-label={t('aria.tileView')}
-                        className={cn(
-                            'transition-colors',
-                            viewMode === 'tile'
-                                ? 'bg-[var(--color-primary)] text-white'
-                                : 'text-gray-600 dark:text-gray-400'
-                        )}
-                    >
-                        <Icon icon="lucide:layout-grid" className="h-4 w-4" aria-hidden="true" />
-                    </Button>
-                </ButtonGroup>
+                {/* Import */}
+                <Button
+                    isIconOnly
+                    variant="light"
+                    size="sm"
+                    onPress={handleImportClick}
+                    aria-label={t('toolbar.import')}
+                >
+                    <Icon icon="lucide:upload" className="w-4 h-4" aria-hidden="true" />
+                </Button>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".html,.htm"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                />
+
+                {/* Export */}
+                <Dropdown>
+                    <DropdownTrigger>
+                        <Button
+                            isIconOnly
+                            variant="light"
+                            size="sm"
+                            aria-label={t('toolbar.export')}
+                        >
+                            <Icon icon="lucide:download" className="w-4 h-4" aria-hidden="true" />
+                        </Button>
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="Export options">
+                        <DropdownItem key="all" onPress={() => onExport('all')}>
+                            {t('export.all')}
+                        </DropdownItem>
+                        <DropdownItem key="folder" onPress={() => onExport('folder')}>
+                            {t('export.currentFolder')}
+                        </DropdownItem>
+                        <DropdownItem key="selection" onPress={() => onExport('selection')}>
+                            {t('export.selection')}
+                        </DropdownItem>
+                    </DropdownMenu>
+                </Dropdown>
 
                 {/* Inspector 切换 */}
                 <Button

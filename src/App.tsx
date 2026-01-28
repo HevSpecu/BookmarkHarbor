@@ -523,12 +523,9 @@ export function App() {
             </a>
             {/* 顶部导航 */}
             <Header
-                breadcrumbs={breadcrumbs}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 searchInputRef={searchInputRef}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
                 theme={theme}
                 onThemeChange={setTheme}
                 locale={locale}
@@ -537,7 +534,10 @@ export function App() {
                 onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
                 inspectorOpen={inspectorOpen}
                 onInspectorToggle={() => setInspectorOpen(!inspectorOpen)}
-                onNavigate={handleNavigate}
+                onNewFolder={handleNewFolder}
+                onNewBookmark={handleNewBookmark}
+                onImport={handleImport}
+                onExport={handleExport}
             />
 
             <DndContext
@@ -569,15 +569,15 @@ export function App() {
                     <main id="main" tabIndex={-1} className="flex-1 flex flex-col bg-white dark:bg-slate-900 relative">
                         {/* 工具栏 */}
                         <Toolbar
-                            onNewFolder={handleNewFolder}
-                            onNewBookmark={handleNewBookmark}
-                            onImport={handleImport}
-                            onExport={handleExport}
+                            breadcrumbs={breadcrumbs}
+                            onNavigate={handleNavigate}
                             onDelete={handleDelete}
                             selectedCount={selection.selectedIds.size}
                             onSelectAll={selection.selectAll}
                             onClearSelection={selection.clearSelection}
                             onInvertSelection={selection.invertSelection}
+                            viewMode={viewMode}
+                            onViewModeChange={setViewMode}
                         />
 
                         {/* 内容列表 */}

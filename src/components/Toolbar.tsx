@@ -2,24 +2,31 @@
  * Toolbar 组件 - 工具栏（复刻参考设计）
  */
 
-import React, { useRef, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
     Button,
+    ButtonGroup,
     Dropdown,
     DropdownTrigger,
     DropdownMenu,
     DropdownItem,
     DropdownSection,
+    Breadcrumbs,
+    BreadcrumbItem,
 } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
-import type { ExportScope, SortField, SortOrder } from '../core/types';
+import type { SortField, SortOrder, ViewMode } from '../core/types';
+import { cn } from '../core/utils';
+
+interface BreadcrumbItemData {
+    id: string;
+    title: string;
+}
 
 interface ToolbarProps {
-    onNewFolder: () => void;
-    onNewBookmark: () => void;
-    onImport: (files: FileList) => void;
-    onExport: (scope: ExportScope) => void;
+    breadcrumbs: BreadcrumbItemData[];
+    onNavigate: (folderId: string) => void;
     onDelete: () => void;
     selectedCount: number;
     onSelectAll?: () => void;
@@ -29,16 +36,16 @@ interface ToolbarProps {
     onRedo?: () => void;
     canUndo?: boolean;
     canRedo?: boolean;
+    viewMode: ViewMode;
+    onViewModeChange: (mode: ViewMode) => void;
     sortField?: SortField;
     sortOrder?: SortOrder;
     onSortChange?: (field: SortField, order: SortOrder) => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
-    onNewFolder,
-    onNewBookmark,
-    onImport,
-    onExport,
+    breadcrumbs,
+    onNavigate,
     onDelete: _onDelete,
     selectedCount,
     onSelectAll,
@@ -48,24 +55,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     onRedo,
     canUndo = false,
     canRedo = false,
+    viewMode,
+    onViewModeChange,
     sortField = 'title',
     sortOrder = 'asc',
     onSortChange,
 }) => {
     const { t } = useTranslation();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleImportClick = useCallback(() => {
-        fileInputRef.current?.click();
-    }, []);
-
-    const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            onImport(files);
-            e.target.value = '';
-        }
-    }, [onImport]);
 
     const handleSortFieldChange = useCallback((field: SortField) => {
         onSortChange?.(field, sortOrder);
@@ -78,24 +74,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     return (
         <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
             {/* Left button group */}
-            <div className="flex gap-2">
-                <Button
-                    variant="flat"
-                    size="sm"
-                    startContent={<Icon icon="lucide:folder-plus" className="w-4 h-4" aria-hidden="true" />}
-                    onPress={onNewFolder}
-                    className="bg-gray-100 dark:bg-gray-800"
-                >
-                    {t('toolbar.newFolder')}
-                </Button>
-                <Button
-                    size="sm"
-                    startContent={<Icon icon="lucide:plus" className="w-4 h-4" aria-hidden="true" />}
-                    onPress={onNewBookmark}
-                    className="bg-[var(--color-primary)] text-white hover:opacity-90 shadow-[0_8px_24px_rgba(var(--color-primary-rgb),0.25)]"
-                >
-                    {t('toolbar.newBookmark')}
-                </Button>
+            <div className="flex min-w-0">
+                <Breadcrumbs size="sm">
+                    {breadcrumbs.map((crumb, index) => (
+                        <BreadcrumbItem
+                            key={crumb.id}
+                            onPress={() => onNavigate(crumb.id)}
+                            isCurrent={index === breadcrumbs.length - 1}
+                        >
+                            {index === 0 ? t('app.allBookmarks') : crumb.title}
+                        </BreadcrumbItem>
+                    ))}
+                </Breadcrumbs>
             </div>
 
             {/* Right button group */}
@@ -218,53 +208,51 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
                 <div className="w-px h-5 bg-gray-200 dark:bg-white/10 mx-1" />
 
-                {/* Import */}
-                <Button
-                    isIconOnly
-                    variant="light"
-                    size="sm"
-                    onPress={handleImportClick}
-                    aria-label={t('toolbar.import')}
-                >
-                    <Icon icon="lucide:upload" className="w-4 h-4" aria-hidden="true" />
-                </Button>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".html,.htm"
-                    multiple
-                    className="hidden"
-                    onChange={handleFileChange}
-                />
-
-                {/* Export */}
-                <Dropdown>
-                    <DropdownTrigger>
-                        <Button
-                            isIconOnly
-                            variant="light"
-                            size="sm"
-                            aria-label={t('toolbar.export')}
-                        >
-                            <Icon icon="lucide:download" className="w-4 h-4" aria-hidden="true" />
-                        </Button>
-                    </DropdownTrigger>
-                    <DropdownMenu aria-label="Export options">
-                        <DropdownItem key="all" onPress={() => onExport('all')}>
-                            {t('export.all')}
-                        </DropdownItem>
-                        <DropdownItem key="folder" onPress={() => onExport('folder')}>
-                            {t('export.currentFolder')}
-                        </DropdownItem>
-                        <DropdownItem
-                            key="selection"
-                            onPress={() => onExport('selection')}
-                            isDisabled={selectedCount === 0}
-                        >
-                            {t('export.selection')} ({selectedCount})
-                        </DropdownItem>
-                    </DropdownMenu>
-                </Dropdown>
+                {/* 视图切换 */}
+                <ButtonGroup size="sm">
+                    <Button
+                        isIconOnly
+                        variant="light"
+                        onPress={() => onViewModeChange('list')}
+                        aria-label={t('aria.listView')}
+                        className={cn(
+                            'transition-colors',
+                            viewMode === 'list'
+                                ? 'bg-[var(--color-primary)] text-white'
+                                : 'text-gray-600 dark:text-gray-400'
+                        )}
+                    >
+                        <Icon icon="lucide:list" className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                    <Button
+                        isIconOnly
+                        variant="light"
+                        onPress={() => onViewModeChange('card')}
+                        aria-label={t('aria.cardView')}
+                        className={cn(
+                            'transition-colors',
+                            viewMode === 'card'
+                                ? 'bg-[var(--color-primary)] text-white'
+                                : 'text-gray-600 dark:text-gray-400'
+                        )}
+                    >
+                        <Icon icon="lucide:grid-2x2" className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                    <Button
+                        isIconOnly
+                        variant="light"
+                        onPress={() => onViewModeChange('tile')}
+                        aria-label={t('aria.tileView')}
+                        className={cn(
+                            'transition-colors',
+                            viewMode === 'tile'
+                                ? 'bg-[var(--color-primary)] text-white'
+                                : 'text-gray-600 dark:text-gray-400'
+                        )}
+                    >
+                        <Icon icon="lucide:layout-grid" className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                </ButtonGroup>
             </div>
         </div>
     );

@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardBody, CardFooter, type PressEvent } from '@heroui/react';
+import { Card, CardBody, CardFooter } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import type { Node } from '../core/types';
@@ -92,21 +92,19 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     if (viewMode === 'tile') {
         return (
             <Card
-                isPressable={!isRenaming}
                 isHoverable={!isRenaming}
                 isBlurred
-                {...(!isRenaming
-                    ? {
-                        onPress: (e: PressEvent) => onSelect({
-                            shiftKey: e.shiftKey,
-                            metaKey: e.metaKey,
-                            ctrlKey: e.ctrlKey,
-                        }),
-                    }
-                    : {})}
+                onPointerDown={(e) => {
+                    if (isRenaming) return;
+                    onSelect({
+                        shiftKey: e.shiftKey,
+                        metaKey: e.metaKey,
+                        ctrlKey: e.ctrlKey,
+                    });
+                }}
                 onDoubleClick={onDoubleClick}
                 className={cn(
-                    'h-16 transition-all border border-gray-200/50 dark:border-white/5',
+                    'h-16 w-full transition-all border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
                     isSelected && 'ring-2 ring-primary-500 bg-primary-50/80 dark:bg-primary-900/30'
                 )}
@@ -198,21 +196,19 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
 
         return (
             <Card
-                isPressable={!isRenaming}
                 isHoverable={!isRenaming}
                 isBlurred
-                {...(!isRenaming
-                    ? {
-                        onPress: (e: PressEvent) => onSelect({
-                            shiftKey: e.shiftKey,
-                            metaKey: e.metaKey,
-                            ctrlKey: e.ctrlKey,
-                        }),
-                    }
-                    : {})}
+                onPointerDown={(e) => {
+                    if (isRenaming) return;
+                    onSelect({
+                        shiftKey: e.shiftKey,
+                        metaKey: e.metaKey,
+                        ctrlKey: e.ctrlKey,
+                    });
+                }}
                 onDoubleClick={onDoubleClick}
                 className={cn(
-                    'overflow-hidden transition-all border border-gray-200/50 dark:border-white/5',
+                    'overflow-hidden w-full transition-all border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
                     isSelected && 'ring-2 ring-primary-500 bg-primary-50/80 dark:bg-primary-900/30'
                 )}
@@ -315,21 +311,19 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     if (viewMode === 'card') {
         return (
             <Card
-                isPressable={!isRenaming}
                 isHoverable={!isRenaming}
                 isBlurred
-                {...(!isRenaming
-                    ? {
-                        onPress: (e: PressEvent) => onSelect({
-                            shiftKey: e.shiftKey,
-                            metaKey: e.metaKey,
-                            ctrlKey: e.ctrlKey,
-                        }),
-                    }
-                    : {})}
+                onPointerDown={(e) => {
+                    if (isRenaming) return;
+                    onSelect({
+                        shiftKey: e.shiftKey,
+                        metaKey: e.metaKey,
+                        ctrlKey: e.ctrlKey,
+                    });
+                }}
                 onDoubleClick={onDoubleClick}
                 className={cn(
-                    'overflow-hidden transition-all border border-gray-200/50 dark:border-white/5',
+                    'overflow-hidden w-full transition-all border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
                     isSelected && 'ring-2 ring-primary-500'
                 )}
