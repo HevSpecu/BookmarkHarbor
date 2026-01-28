@@ -42,6 +42,7 @@ import { Sidebar } from './components/Sidebar';
 import { Toolbar } from './components/Toolbar';
 import { ContentArea } from './components/ContentArea';
 import { Inspector } from './components/Inspector';
+import { SelectionToolbar } from './components/SelectionToolbar';
 
 // i18n
 import { changeLanguage } from './i18n';
@@ -464,6 +465,15 @@ export function App() {
                         </div>
                     ) : null}
                 </DragOverlay>
+
+                {/* Floating Selection Toolbar */}
+                <SelectionToolbar
+                    selectedCount={selection.selectedIds.size}
+                    onMove={() => {}}
+                    onExport={() => handleExport('selection')}
+                    onDelete={handleDelete}
+                    onClear={selection.clearSelection}
+                />
             </DndContext>
         </div>
     );
