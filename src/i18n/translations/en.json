@@ -110,7 +110,7 @@
         "cancel": "Cancel",
         "save": "Save",
         "delete": "Delete",
-        "deleteConfirm": "Are you sure you want to delete {count} item(s)?",
+        "deleteConfirm": "Are you sure you want to delete {{count}} item(s)?",
         "deleteWarning": "This action cannot be undone"
     },
     "import": {
@@ -122,8 +122,8 @@
         "selectFolder": "Select Folder",
         "importing": "Importing...",
         "success": "Import Successful",
-        "created": "Created {count} item(s)",
-        "errors": "{count} error(s) occurred"
+        "created": "Created {{count}} item(s)",
+        "errors": "{{count}} error(s) occurred"
     },
     "export": {
         "title": "Export Bookmarks",
@@ -150,7 +150,7 @@
     "toast": {
         "copied": "Copied to clipboard",
         "saved": "Saved",
-        "deleted": "Deleted {count} item(s)",
+        "deleted": "Deleted {{count}} item(s)",
         "moved": "Moved",
         "renamed": "Renamed",
         "undo": "Undo",

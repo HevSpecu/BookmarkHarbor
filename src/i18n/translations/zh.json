@@ -110,7 +110,7 @@
         "cancel": "取消",
         "save": "保存",
         "delete": "删除",
-        "deleteConfirm": "确定要删除选中的 {count} 个项目吗？",
+        "deleteConfirm": "确定要删除选中的 {{count}} 个项目吗？",
         "deleteWarning": "此操作无法撤销"
     },
     "import": {
@@ -122,8 +122,8 @@
         "selectFolder": "选择文件夹",
         "importing": "正在导入...",
         "success": "导入成功",
-        "created": "已创建 {count} 个项目",
-        "errors": "有 {count} 个错误"
+        "created": "已创建 {{count}} 个项目",
+        "errors": "有 {{count}} 个错误"
     },
     "export": {
         "title": "导出书签",
@@ -150,7 +150,7 @@
     "toast": {
         "copied": "已复制到剪贴板",
         "saved": "已保存",
-        "deleted": "已删除 {count} 个项目",
+        "deleted": "已删除 {{count}} 个项目",
         "moved": "已移动",
         "renamed": "已重命名",
         "undo": "撤销",

@@ -4,13 +4,14 @@
 
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { addToast, Button } from '@heroui/react';
+import { addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/react';
 import {
     DndContext,
     DragOverlay,
     KeyboardSensor,
     PointerSensor,
     closestCenter,
+    rectIntersection,
     useSensor,
     useSensors,
     type DragEndEvent,
@@ -74,7 +75,7 @@ function parseContentDropId(id: string): { folderId: string } | null {
 export function App() {
     const { t } = useTranslation();
     const { nodes } = useNodes();
-    const { createNode, updateNode, moveNodes, deleteNodes } = useNodeActions();
+    const { createNode, updateNode, moveNodes, deleteNodes, restoreNodes } = useNodeActions();
     const [theme, setTheme] = useTheme();
     const [viewMode, setViewMode] = useViewMode();
     const [locale, setLocale] = useLocale();
@@ -96,6 +97,8 @@ export function App() {
     const [rememberFolderView, setRememberFolderView] = useState(false);
     const [themeColor, setThemeColor] = useState('#3B82F6');
     const [pendingDeletions, setPendingDeletions] = useState<{ ids: string[]; timeoutId: number } | null>(null);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // 应用主题色到 CSS 变量
@@ -124,7 +127,12 @@ export function App() {
     const currentChildren = useMemo(() => {
         return Object.values(nodes)
             .filter(n => n.parentId === currentFolderId && !n.deletedAt)
-            .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+            .sort((a, b) => {
+                if (a.type !== b.type) {
+                    return a.type === 'folder' ? -1 : 1;
+                }
+                return a.orderKey.localeCompare(b.orderKey);
+            });
     }, [nodes, currentFolderId]);
 
     // 搜索过滤
@@ -198,47 +206,48 @@ export function App() {
     const handleUndoDelete = useCallback(() => {
         if (!pendingDeletions) return;
         clearTimeout(pendingDeletions.timeoutId);
-        // 恢复节点（取消软删除）
-        pendingDeletions.ids.forEach(id => {
-            updateNode(id, { deletedAt: undefined } as any);
-        });
+        restoreNodes(pendingDeletions.ids);
         setPendingDeletions(null);
-    }, [pendingDeletions, updateNode]);
+    }, [pendingDeletions, restoreNodes]);
 
-    // 删除选中项（带撤销功能）
     const handleDelete = useCallback(() => {
         if (selection.selectedIds.size === 0) return;
+        setDeleteConfirmIds(Array.from(selection.selectedIds));
+        setDeleteConfirmOpen(true);
+    }, [selection.selectedIds]);
 
-        const ids = Array.from(selection.selectedIds);
+    const handleConfirmDelete = useCallback(() => {
+        if (deleteConfirmIds.length === 0) {
+            setDeleteConfirmOpen(false);
+            return;
+        }
+
+        const ids = deleteConfirmIds;
         const count = ids.length;
 
-        // 先软删除
         deleteNodes(ids);
         selection.clearSelection();
 
-        // 设置延迟硬删除
         const timeoutId = window.setTimeout(() => {
+            deleteNodes(ids, true);
             setPendingDeletions(null);
         }, 5000);
 
         setPendingDeletions({ ids, timeoutId });
+        setDeleteConfirmOpen(false);
+        setDeleteConfirmIds([]);
 
-        // 显示带撤销按钮的 toast
         addToast({
             title: t('toast.deleted', { count }),
             timeout: 5000,
             shouldShowTimeoutProgress: true,
             endContent: (
-                <Button
-                    size="sm"
-                    variant="flat"
-                    onPress={handleUndoDelete}
-                >
+                <Button size="sm" variant="flat" onPress={handleUndoDelete}>
                     {t('toast.undo')}
                 </Button>
             ),
         });
-    }, [selection, deleteNodes, t, handleUndoDelete]);
+    }, [deleteConfirmIds, deleteNodes, handleUndoDelete, selection, t]);
 
     // 重命名提交
     const handleRenameSubmit = useCallback((id: string, newTitle: string) => {
@@ -257,6 +266,27 @@ export function App() {
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
+    const collisionDetection = useCallback(
+        (args: Parameters<typeof rectIntersection>[0]) => {
+            const base = viewMode === 'list' ? closestCenter : rectIntersection;
+            const collisions = base(args);
+            const nonContentCollisions = collisions.filter(({ id }) => !String(id).startsWith('content:'));
+            const pruned = nonContentCollisions.length > 0 ? nonContentCollisions : collisions;
+            const activeId = String(args.active.id);
+            const activeNode = nodes[activeId];
+            const isDraggingBookmark = activeNode?.type === 'bookmark';
+            if (!isDraggingBookmark) return pruned;
+
+            const folderCollisions = pruned.filter(({ id }) => {
+                const str = String(id);
+                return str.startsWith('content-folder:') || str.startsWith('sidebar-folder:');
+            });
+
+            return folderCollisions.length > 0 ? folderCollisions : pruned;
+        },
+        [nodes, viewMode]
     );
 
     const getDragNodeIds = useCallback((activeId: string): string[] => {
@@ -512,74 +542,73 @@ export function App() {
 
             <DndContext
                 sensors={sensors}
-                collisionDetection={closestCenter}
+                collisionDetection={collisionDetection}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
                 {/* 主内容区域 */}
                 <div className="flex flex-1 overflow-hidden">
-                {/* 侧边栏 */}
-                {sidebarOpen && (
-                    <Sidebar
-                        nodes={nodes}
-                        rootId="root"
-                        currentFolderId={currentFolderId}
-                        expandedFolders={expandedFolders}
-                        onFolderClick={handleFolderClick}
-                        onToggleExpand={handleToggleExpand}
-                        onNewFolder={handleNewFolder}
-                        onOpenSettings={() => setSettingsOpen(true)}
-                        onNavigateToFavorites={handleNavigateToFavorites}
-                        onNavigateToReadLater={handleNavigateToReadLater}
-                        onNavigateToTrash={handleNavigateToTrash}
-                        currentView={currentView}
-                    />
-                )}
+                    {/* 侧边栏 */}
+                    {sidebarOpen && (
+                        <Sidebar
+                            nodes={nodes}
+                            rootId="root"
+                            currentFolderId={currentFolderId}
+                            expandedFolders={expandedFolders}
+                            onFolderClick={handleFolderClick}
+                            onToggleExpand={handleToggleExpand}
+                            onNewFolder={handleNewFolder}
+                            onOpenSettings={() => setSettingsOpen(true)}
+                            onNavigateToFavorites={handleNavigateToFavorites}
+                            onNavigateToReadLater={handleNavigateToReadLater}
+                            onNavigateToTrash={handleNavigateToTrash}
+                            currentView={currentView}
+                        />
+                    )}
+                    {/* 主区域 */}
+                    <main id="main" tabIndex={-1} className="flex-1 flex flex-col bg-white dark:bg-slate-900 relative">
+                        {/* 工具栏 */}
+                        <Toolbar
+                            onNewFolder={handleNewFolder}
+                            onNewBookmark={handleNewBookmark}
+                            onImport={handleImport}
+                            onExport={handleExport}
+                            onDelete={handleDelete}
+                            selectedCount={selection.selectedIds.size}
+                            onSelectAll={selection.selectAll}
+                            onClearSelection={selection.clearSelection}
+                            onInvertSelection={selection.invertSelection}
+                        />
 
-                {/* 主区域 */}
-                <main id="main" tabIndex={-1} className="flex-1 flex flex-col bg-white dark:bg-slate-900 relative">
-                    {/* 工具栏 */}
-                    <Toolbar
-                        onNewFolder={handleNewFolder}
-                        onNewBookmark={handleNewBookmark}
-                        onImport={handleImport}
-                        onExport={handleExport}
-                        onDelete={handleDelete}
-                        selectedCount={selection.selectedIds.size}
-                        onSelectAll={selection.selectAll}
-                        onClearSelection={selection.clearSelection}
-                        onInvertSelection={selection.invertSelection}
-                    />
+                        {/* 内容列表 */}
+                        <ContentArea
+                            nodes={visibleNodes}
+                            allNodes={nodes}
+                            folderId={currentFolderId}
+                            viewMode={viewMode}
+                            selectedIds={selection.selectedIds}
+                            renamingId={renamingId}
+                            searchQuery={searchQuery}
+                            cardFolderPreviewSize={cardFolderPreviewSize}
+                            onSelect={handleSelect}
+                            onDoubleClick={handleDoubleClick}
+                            onClearSelection={selection.clearSelection}
+                            onRenameSubmit={handleRenameSubmit}
+                            onRenameCancel={handleRenameCancel}
+                        />
+                    </main>
 
-                    {/* 内容列表 */}
-                    <ContentArea
-                        nodes={visibleNodes}
-                        allNodes={nodes}
-                        folderId={currentFolderId}
-                        viewMode={viewMode}
-                        selectedIds={selection.selectedIds}
-                        renamingId={renamingId}
-                        searchQuery={searchQuery}
-                        cardFolderPreviewSize={cardFolderPreviewSize}
-                        onSelect={handleSelect}
-                        onDoubleClick={handleDoubleClick}
-                        onClearSelection={selection.clearSelection}
-                        onRenameSubmit={handleRenameSubmit}
-                        onRenameCancel={handleRenameCancel}
-                    />
-                </main>
-
-                {/* 属性面板 */}
-                {inspectorOpen && (
-                    <Inspector
-                        nodes={nodes}
-                        selectedIds={selection.selectedIds}
-                        customColors={customColors}
-                        onUpdate={handleUpdateNode}
-                        onClose={() => setInspectorOpen(false)}
-                        onAddCustomColor={handleAddCustomColor}
-                    />
-                )}
+                    {/* 属性面板 */}
+                    {inspectorOpen && (
+                        <Inspector
+                            nodes={nodes}
+                            selectedIds={selection.selectedIds}
+                            customColors={customColors}
+                            onUpdate={handleUpdateNode}
+                            onClose={() => setInspectorOpen(false)}
+                            onAddCustomColor={handleAddCustomColor}
+                        />
+                    )}
                 </div>
 
                 <DragOverlay>
@@ -600,27 +629,65 @@ export function App() {
                     onDelete={handleDelete}
                     onClear={selection.clearSelection}
                 />
-            </DndContext>
 
-            {/* Settings Modal */}
-            <SettingsModal
-                isOpen={settingsOpen}
-                onClose={() => setSettingsOpen(false)}
-                theme={theme}
-                onThemeChange={setTheme}
-                locale={locale}
-                onLocaleChange={handleLocaleChange}
-                autoExpandTree={autoExpandTree}
-                onAutoExpandTreeChange={setAutoExpandTree}
-                cardFolderPreviewSize={cardFolderPreviewSize}
-                onCardFolderPreviewSizeChange={setCardFolderPreviewSize}
-                defaultViewMode={defaultViewMode}
-                onDefaultViewModeChange={setDefaultViewMode}
-                rememberFolderView={rememberFolderView}
-                onRememberFolderViewChange={setRememberFolderView}
-                themeColor={themeColor}
-                onThemeColorChange={setThemeColor}
-            />
+                {/* Settings Modal */}
+                <SettingsModal
+                    isOpen={settingsOpen}
+                    onClose={() => setSettingsOpen(false)}
+                    theme={theme}
+                    onThemeChange={setTheme}
+                    locale={locale}
+                    onLocaleChange={handleLocaleChange}
+                    autoExpandTree={autoExpandTree}
+                    onAutoExpandTreeChange={setAutoExpandTree}
+                    cardFolderPreviewSize={cardFolderPreviewSize}
+                    onCardFolderPreviewSizeChange={setCardFolderPreviewSize}
+                    defaultViewMode={defaultViewMode}
+                    onDefaultViewModeChange={setDefaultViewMode}
+                    rememberFolderView={rememberFolderView}
+                    onRememberFolderViewChange={setRememberFolderView}
+                    themeColor={themeColor}
+                    onThemeColorChange={setThemeColor}
+                />
+
+                <Modal
+                    isOpen={deleteConfirmOpen}
+                    onClose={() => {
+                        setDeleteConfirmOpen(false);
+                        setDeleteConfirmIds([]);
+                    }}
+                    backdrop="blur"
+                    size="sm"
+                >
+                    <ModalContent>
+                        <ModalHeader className="flex flex-col gap-1">
+                            {t('dialog.delete')}
+                        </ModalHeader>
+                        <ModalBody>
+                            <p className="text-sm text-gray-700 dark:text-gray-200">
+                                {t('dialog.deleteConfirm', { count: deleteConfirmIds.length })}
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                                {t('dialog.deleteWarning')}
+                            </p>
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button
+                                variant="light"
+                                onPress={() => {
+                                    setDeleteConfirmOpen(false);
+                                    setDeleteConfirmIds([]);
+                                }}
+                            >
+                                {t('dialog.cancel')}
+                            </Button>
+                            <Button color="danger" onPress={handleConfirmDelete}>
+                                {t('dialog.delete')}
+                            </Button>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
+            </DndContext>
         </div>
     );
 }
