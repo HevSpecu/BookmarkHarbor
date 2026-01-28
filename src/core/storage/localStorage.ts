@@ -50,6 +50,10 @@ function getDefaultData(): StorageData {
             autoExpandTree: false,
             cardFolderPreviewSize: '2x2',
             customColors: [],
+            defaultViewMode: 'card',
+            rememberFolderView: false,
+            folderViewModes: {},
+            themeColor: '#3B82F6',
         },
     };
 }

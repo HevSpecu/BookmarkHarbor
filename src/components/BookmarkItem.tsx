@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardBody, CardFooter, type PressEvent } from '@heroui/react';
+import { Card, CardBody, type PressEvent } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import type { Node } from '../core/types';
@@ -386,16 +386,6 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     </div>
                 </div>
 
-                {/* More button */}
-                <CardFooter className="absolute top-2 right-2 p-0 min-h-0">
-                    <button
-                        type="button"
-                        className="w-6 h-6 rounded-md bg-black/20 backdrop-blur-sm flex items-center justify-center hover:bg-black/40 transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <Icon icon="lucide:more-vertical" className="w-3.5 h-3.5 text-white" aria-hidden="true" />
-                    </button>
-                </CardFooter>
             </Card>
         );
     }

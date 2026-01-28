@@ -2,8 +2,9 @@
  * AuraBookmarks 主应用组件
  */
 
-import { useMemo, useRef, useState, useCallback } from 'react';
+import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { addToast, Button } from '@heroui/react';
 import {
     DndContext,
     DragOverlay,
@@ -18,7 +19,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
 // Core
-import type { Node, ExportScope, Locale, CardFolderPreviewSize } from './core/types';
+import type { Node, ExportScope, Locale, CardFolderPreviewSize, ViewMode } from './core/types';
 import {
     useNodes,
     useNodeActions,
@@ -91,7 +92,28 @@ export function App() {
     const [cardFolderPreviewSize, setCardFolderPreviewSize] = useState<CardFolderPreviewSize>('2x2');
     const [customColors, setCustomColors] = useState<string[]>([]);
     const [currentView, setCurrentView] = useState<'bookmarks' | 'favorites' | 'readLater' | 'trash'>('bookmarks');
+    const [defaultViewMode, setDefaultViewMode] = useState<ViewMode>('card');
+    const [rememberFolderView, setRememberFolderView] = useState(false);
+    const [themeColor, setThemeColor] = useState('#3B82F6');
+    const [pendingDeletions, setPendingDeletions] = useState<{ ids: string[]; timeoutId: number } | null>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // 应用主题色到 CSS 变量
+    useEffect(() => {
+        const root = document.documentElement;
+        root.style.setProperty('--color-primary', themeColor);
+        // 计算较浅和较深的变体
+        const hexToRgb = (hex: string) => {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 59, g: 130, b: 246 };
+        };
+        const rgb = hexToRgb(themeColor);
+        root.style.setProperty('--color-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+    }, [themeColor]);
 
     // 面包屑
     const breadcrumbs = useMemo(() => {
@@ -172,19 +194,51 @@ export function App() {
         setRenamingId(newNode.id);
     }, [createNode, currentFolderId, selection, t]);
 
-    // 删除选中项
+    // 撤销删除
+    const handleUndoDelete = useCallback(() => {
+        if (!pendingDeletions) return;
+        clearTimeout(pendingDeletions.timeoutId);
+        // 恢复节点（取消软删除）
+        pendingDeletions.ids.forEach(id => {
+            updateNode(id, { deletedAt: undefined } as any);
+        });
+        setPendingDeletions(null);
+    }, [pendingDeletions, updateNode]);
+
+    // 删除选中项（带撤销功能）
     const handleDelete = useCallback(() => {
         if (selection.selectedIds.size === 0) return;
 
-        const confirmed = window.confirm(
-            t('dialog.deleteConfirm', { count: selection.selectedIds.size })
-        );
-        if (!confirmed) return;
-
         const ids = Array.from(selection.selectedIds);
+        const count = ids.length;
+
+        // 先软删除
         deleteNodes(ids);
         selection.clearSelection();
-    }, [selection, deleteNodes, t]);
+
+        // 设置延迟硬删除
+        const timeoutId = window.setTimeout(() => {
+            setPendingDeletions(null);
+        }, 5000);
+
+        setPendingDeletions({ ids, timeoutId });
+
+        // 显示带撤销按钮的 toast
+        addToast({
+            title: t('toast.deleted', { count }),
+            timeout: 5000,
+            shouldShowTimeoutProgress: true,
+            endContent: (
+                <Button
+                    size="sm"
+                    variant="flat"
+                    onPress={handleUndoDelete}
+                >
+                    {t('toast.undo')}
+                </Button>
+            ),
+        });
+    }, [selection, deleteNodes, t, handleUndoDelete]);
 
     // 重命名提交
     const handleRenameSubmit = useCallback((id: string, newTitle: string) => {
@@ -341,6 +395,26 @@ export function App() {
             return newColors;
         });
     }, []);
+
+    // 收藏选中项
+    const handleFavorite = useCallback(() => {
+        if (selection.selectedIds.size === 0) return;
+        const ids = Array.from(selection.selectedIds);
+        ids.forEach(id => {
+            updateNode(id, { isFavorite: true });
+        });
+        addToast({ title: t('toast.favorited'), color: 'success', timeout: 3000 });
+    }, [selection, updateNode, t]);
+
+    // 添加到稍后阅读
+    const handleReadLater = useCallback(() => {
+        if (selection.selectedIds.size === 0) return;
+        const ids = Array.from(selection.selectedIds);
+        ids.forEach(id => {
+            updateNode(id, { isReadLater: true });
+        });
+        addToast({ title: t('toast.readLaterAdded'), color: 'success', timeout: 3000 });
+    }, [selection, updateNode, t]);
 
     // 导航到收藏夹
     const handleNavigateToFavorites = useCallback(() => {
@@ -521,8 +595,8 @@ export function App() {
                 {/* Floating Selection Toolbar */}
                 <SelectionToolbar
                     selectedCount={selection.selectedIds.size}
-                    onMove={() => {}}
-                    onExport={() => handleExport('selection')}
+                    onFavorite={handleFavorite}
+                    onReadLater={handleReadLater}
                     onDelete={handleDelete}
                     onClear={selection.clearSelection}
                 />
@@ -540,6 +614,12 @@ export function App() {
                 onAutoExpandTreeChange={setAutoExpandTree}
                 cardFolderPreviewSize={cardFolderPreviewSize}
                 onCardFolderPreviewSizeChange={setCardFolderPreviewSize}
+                defaultViewMode={defaultViewMode}
+                onDefaultViewModeChange={setDefaultViewMode}
+                rememberFolderView={rememberFolderView}
+                onRememberFolderViewChange={setRememberFolderView}
+                themeColor={themeColor}
+                onThemeColorChange={setThemeColor}
             />
         </div>
     );

@@ -47,7 +47,11 @@
         "theme": "Theme",
         "language": "Language",
         "autoExpandTree": "Auto expand folder tree",
-        "cardFolderPreviewSize": "Folder preview size"
+        "cardFolderPreviewSize": "Folder preview size",
+        "defaultView": "Default view",
+        "rememberFolderView": "Remember folder view",
+        "themeColor": "Theme color",
+        "customColor": "Custom color"
     },
     "theme": {
         "light": "Light",
@@ -139,16 +143,19 @@
     },
     "selection": {
         "selected": "Selected",
-        "move": "Move",
-        "export": "Export",
+        "favorite": "Favorite",
+        "readLater": "Later",
         "delete": "Delete"
     },
     "toast": {
         "copied": "Copied to clipboard",
         "saved": "Saved",
-        "deleted": "Deleted",
+        "deleted": "Deleted {count} item(s)",
         "moved": "Moved",
-        "renamed": "Renamed"
+        "renamed": "Renamed",
+        "undo": "Undo",
+        "favorited": "Added to favorites",
+        "readLaterAdded": "Added to read later"
     },
     "aria": {
         "toggleSidebar": "Toggle sidebar",

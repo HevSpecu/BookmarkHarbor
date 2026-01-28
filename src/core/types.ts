@@ -28,6 +28,8 @@ export interface Node {
     iconAssetId?: string;
     iconSource?: IconSource;
     notes?: string;
+    isFavorite?: boolean;
+    isReadLater?: boolean;
     createdAt: number; // Unix timestamp (ms)
     updatedAt: number;
     deletedAt?: number | null; // 软删除
@@ -50,6 +52,8 @@ export interface UpdateNodeRequest {
     iconAssetId?: string;
     iconSource?: IconSource;
     notes?: string;
+    isFavorite?: boolean;
+    isReadLater?: boolean;
 }
 
 // 移动节点请求
@@ -169,6 +173,10 @@ export interface StorageData {
         autoExpandTree: boolean;
         cardFolderPreviewSize: CardFolderPreviewSize;
         customColors: string[];
+        defaultViewMode: ViewMode;
+        rememberFolderView: boolean;
+        folderViewModes: Record<string, ViewMode>;
+        themeColor: string;
     };
 }
 
@@ -196,5 +204,9 @@ export const DEFAULT_STORAGE_DATA: StorageData = {
         autoExpandTree: false,
         cardFolderPreviewSize: '2x2',
         customColors: [],
+        defaultViewMode: 'card',
+        rememberFolderView: false,
+        folderViewModes: {},
+        themeColor: '#3B82F6',
     },
 };

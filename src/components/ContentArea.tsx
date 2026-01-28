@@ -146,16 +146,16 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     // Get grid class based on view mode
     const getGridClass = (forFolders = false) => {
         if (viewMode === 'list') {
-            return 'flex flex-col gap-1';
+            return 'flex flex-col gap-0.5';
         }
         if (viewMode === 'tile') {
-            return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3';
+            return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2';
         }
         // card view
         if (forFolders) {
-            return 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4';
+            return 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2';
         }
-        return 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4';
+        return 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2';
     };
 
     // When searching, show all results together

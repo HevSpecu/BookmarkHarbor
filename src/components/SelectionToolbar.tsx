@@ -9,16 +9,16 @@ import { useTranslation } from 'react-i18next';
 
 interface SelectionToolbarProps {
     selectedCount: number;
-    onMove: () => void;
-    onExport: () => void;
+    onFavorite: () => void;
+    onReadLater: () => void;
     onDelete: () => void;
     onClear: () => void;
 }
 
 export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
     selectedCount,
-    onMove,
-    onExport,
+    onFavorite,
+    onReadLater,
     onDelete,
     onClear,
 }) => {
@@ -37,26 +37,26 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
 
                 <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
 
-                {/* Move button */}
+                {/* Favorite button */}
                 <Button
                     variant="light"
                     size="sm"
-                    startContent={<Icon icon="lucide:folder-input" className="w-4 h-4" aria-hidden="true" />}
-                    onPress={onMove}
+                    startContent={<Icon icon="lucide:star" className="w-4 h-4" aria-hidden="true" />}
+                    onPress={onFavorite}
                     className="text-gray-600 dark:text-gray-300"
                 >
-                    {t('selection.move')}
+                    {t('selection.favorite')}
                 </Button>
 
-                {/* Export button */}
+                {/* Read Later button */}
                 <Button
                     variant="light"
                     size="sm"
-                    startContent={<Icon icon="lucide:download" className="w-4 h-4" aria-hidden="true" />}
-                    onPress={onExport}
+                    startContent={<Icon icon="lucide:clock" className="w-4 h-4" aria-hidden="true" />}
+                    onPress={onReadLater}
                     className="text-gray-600 dark:text-gray-300"
                 >
-                    {t('selection.export')}
+                    {t('selection.readLater')}
                 </Button>
 
                 {/* Delete button */}

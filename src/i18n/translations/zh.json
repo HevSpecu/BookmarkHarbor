@@ -47,7 +47,11 @@
         "theme": "主题",
         "language": "语言",
         "autoExpandTree": "自动展开目录树",
-        "cardFolderPreviewSize": "文件夹预览尺寸"
+        "cardFolderPreviewSize": "文件夹预览尺寸",
+        "defaultView": "默认视图",
+        "rememberFolderView": "记忆文件夹视图",
+        "themeColor": "主题色",
+        "customColor": "自定义颜色"
     },
     "theme": {
         "light": "浅色",
@@ -139,16 +143,19 @@
     },
     "selection": {
         "selected": "已选择",
-        "move": "移动",
-        "export": "导出",
+        "favorite": "收藏",
+        "readLater": "稍后",
         "delete": "删除"
     },
     "toast": {
         "copied": "已复制到剪贴板",
         "saved": "已保存",
-        "deleted": "已删除",
+        "deleted": "已删除 {count} 个项目",
         "moved": "已移动",
-        "renamed": "已重命名"
+        "renamed": "已重命名",
+        "undo": "撤销",
+        "favorited": "已添加到收藏夹",
+        "readLaterAdded": "已添加到稍后阅读"
     },
     "aria": {
         "toggleSidebar": "切换侧边栏",
