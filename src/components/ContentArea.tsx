@@ -74,6 +74,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     // Separate folders and bookmarks
     const folders = useMemo(() => nodes.filter(n => n.type === 'folder'), [nodes]);
     const bookmarks = useMemo(() => nodes.filter(n => n.type === 'bookmark'), [nodes]);
+    const renderedNodes = useMemo(() => [...folders, ...bookmarks], [folders, bookmarks]);
 
     // Empty state
     if (nodes.length === 0) {
@@ -145,13 +146,13 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
             return 'flex flex-col gap-1';
         }
         if (viewMode === 'tile') {
-            return 'grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2';
+            return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2';
         }
         // card view
         if (forFolders) {
-            return 'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2';
+            return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3';
         }
-        return 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2';
+        return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3';
     };
 
     // When searching, show all results together
@@ -164,14 +165,14 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                     if (e.target === e.currentTarget) onClearSelection();
                 }}
             >
-                <SortableContext items={nodes.map((n) => n.id)} strategy={sortingStrategy}>
+                <SortableContext items={renderedNodes.map((n) => n.id)} strategy={sortingStrategy}>
                     <div
                         className={cn(getGridClass())}
                         onPointerDown={(e) => {
                             if (e.target === e.currentTarget) onClearSelection();
                         }}
                     >
-                        {nodes.map((node) => renderNode(node, true))}
+                        {renderedNodes.map((node) => renderNode(node, true))}
                     </div>
                 </SortableContext>
             </div>
@@ -186,40 +187,29 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                 if (e.target === e.currentTarget) onClearSelection();
             }}
         >
-            <SortableContext items={nodes.map((n) => n.id)} strategy={sortingStrategy}>
-                {/* SUBFOLDERS Section */}
-                {folders.length > 0 && (
-                    <section className="mb-4">
-                        <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
+            <SortableContext items={renderedNodes.map((n) => n.id)} strategy={sortingStrategy}>
+                <div
+                    className={cn(getGridClass())}
+                    onPointerDown={(e) => {
+                        if (e.target === e.currentTarget) onClearSelection();
+                    }}
+                >
+                    {/* SUBFOLDERS Section */}
+                    {folders.length > 0 && viewMode !== 'list' && (
+                        <h2 className="col-span-full text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-1">
                             {t('content.subfolders')}
                         </h2>
-                        <div
-                            className={cn(getGridClass(true))}
-                            onPointerDown={(e) => {
-                                if (e.target === e.currentTarget) onClearSelection();
-                            }}
-                        >
-                            {folders.map((node) => renderNode(node, false))}
-                        </div>
-                    </section>
-                )}
+                    )}
+                    {folders.map((node) => renderNode(node, false))}
 
-                {/* BOOKMARKS Section */}
-                {bookmarks.length > 0 && (
-                    <section>
-                        <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
+                    {/* BOOKMARKS Section */}
+                    {bookmarks.length > 0 && viewMode !== 'list' && (
+                        <h2 className={cn('col-span-full text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-1', folders.length > 0 && 'mt-2')}>
                             {t('content.bookmarks')}
                         </h2>
-                        <div
-                            className={cn(getGridClass())}
-                            onPointerDown={(e) => {
-                                if (e.target === e.currentTarget) onClearSelection();
-                            }}
-                        >
-                            {bookmarks.map((node) => renderNode(node, false))}
-                        </div>
-                    </section>
-                )}
+                    )}
+                    {bookmarks.map((node) => renderNode(node, false))}
+                </div>
             </SortableContext>
         </div>
     );

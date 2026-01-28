@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardBody, type PressEvent } from '@heroui/react';
+import { Card, CardBody, CardFooter, type PressEvent } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import type { Node } from '../core/types';
@@ -330,62 +330,81 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 onDoubleClick={onDoubleClick}
                 className={cn(
                     'overflow-hidden transition-all border border-gray-200/50 dark:border-white/5',
+                    'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
                     isSelected && 'ring-2 ring-primary-500'
                 )}
             >
-                {/* Thumbnail area */}
-                <div
-                    className="aspect-[16/10] w-full bg-cover bg-center bg-no-repeat relative"
-                    style={{
-                        background: node.coverUrl
-                            ? `url(${node.coverUrl}) center/cover`
-                            : `linear-gradient(135deg, ${node.color || '#6366f1'}, ${node.color ? node.color + '88' : '#8b5cf6'})`,
-                    }}
-                >
-                    {/* Selection checkbox */}
-                    {isSelected && (
-                        <div className="absolute top-2 left-2">
-                            <div className="w-5 h-5 rounded-md bg-primary-500 flex items-center justify-center shadow-lg">
-                                <Icon icon="lucide:check" className="w-3 h-3 text-white" aria-hidden="true" />
+                <CardBody className="p-0">
+                    <div
+                        className="aspect-[16/10] w-full bg-cover bg-center bg-no-repeat relative"
+                        style={{
+                            background: node.coverUrl
+                                ? `url(${node.coverUrl}) center/cover`
+                                : `linear-gradient(135deg, ${node.color || '#6366f1'}, ${node.color ? node.color + '88' : '#8b5cf6'})`,
+                        }}
+                    >
+                        {isSelected && (
+                            <div className="absolute top-2 left-2">
+                                <div className="w-5 h-5 rounded-md bg-primary-500 flex items-center justify-center shadow-lg">
+                                    <Icon icon="lucide:check" className="w-3 h-3 text-white" aria-hidden="true" />
+                                </div>
                             </div>
-                        </div>
-                    )}
-
-                    {/* Gradient overlay for title visibility */}
-                    <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
-
-                    {/* Title overlay on image */}
-                    <div className="absolute inset-x-0 bottom-0 p-3">
-                        <div className="flex items-center gap-2">
-                            {node.iconUrl ? (
-                                <img
-                                    src={node.iconUrl}
-                                    alt=""
-                                    width={16}
-                                    height={16}
-                                    loading="lazy"
-                                    decoding="async"
-                                    className="w-4 h-4 rounded-sm object-contain flex-shrink-0"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
-                                    }}
-                                />
-                            ) : (
-                                <div
-                                    className="w-4 h-4 rounded-sm flex-shrink-0"
-                                    style={{ backgroundColor: node.color || '#6366f1' }}
-                                />
-                            )}
-                            <span className="text-sm font-medium text-white truncate">
-                                {node.title}
-                            </span>
-                        </div>
-                        <p className="text-xs text-white/70 truncate mt-0.5 pl-6">
-                            {extractDomain(node.url || '')}
-                        </p>
+                        )}
+                        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
                     </div>
-                </div>
+                </CardBody>
 
+                <CardFooter className="p-3 pt-2 flex flex-col items-start gap-0.5">
+                    {isRenaming ? (
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={handleRenameKeyDown}
+                            onBlur={() => {
+                                if (ignoreBlurRef.current) {
+                                    ignoreBlurRef.current = false;
+                                    return;
+                                }
+                                onRenameSubmit(renameValue);
+                            }}
+                            className="w-full text-sm font-medium bg-transparent border-none text-gray-900 dark:text-white outline-none"
+                            onClick={(e) => e.stopPropagation()}
+                            onDoubleClick={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <>
+                            <div className="flex items-center gap-2 w-full">
+                                {node.iconUrl ? (
+                                    <img
+                                        src={node.iconUrl}
+                                        alt=""
+                                        width={16}
+                                        height={16}
+                                        loading="lazy"
+                                        decoding="async"
+                                        className="w-4 h-4 rounded-sm object-contain flex-shrink-0"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                    />
+                                ) : (
+                                    <div
+                                        className="w-4 h-4 rounded-sm flex-shrink-0"
+                                        style={{ backgroundColor: node.color || '#6366f1' }}
+                                    />
+                                )}
+                                <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                    {node.title}
+                                </span>
+                            </div>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 truncate w-full">
+                                {extractDomain(node.url || '')}
+                            </p>
+                        </>
+                    )}
+                </CardFooter>
             </Card>
         );
     }

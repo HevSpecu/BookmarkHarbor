@@ -26,7 +26,7 @@ function FolderDropTarget({ folderId }: { folderId: string }) {
             ref={setNodeRef}
             className={cn(
                 'pointer-events-none absolute rounded-xl transition-all',
-                'inset-0',
+                'inset-2',
                 isOver
                     ? 'ring-2 ring-primary-500 bg-primary-500/5'
                     : 'ring-0 bg-transparent'
