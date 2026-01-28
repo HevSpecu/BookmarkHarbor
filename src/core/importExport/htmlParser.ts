@@ -14,6 +14,9 @@ export interface ParsedItem {
     type: 'folder' | 'bookmark';
     title: string;
     url?: string;
+    iconUrl?: string;
+    tags?: string[];
+    notes?: string;
     children: ParsedItem[];
 }
 
@@ -23,9 +26,22 @@ export interface ParsedItem {
  * @returns 解析后的结构
  */
 export function parseBookmarkHtml(html: string): ParsedItem[] {
-    // 创建 DOM 解析器
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const doc = (() => {
+        if (typeof DOMParser !== 'undefined') {
+            return new DOMParser().parseFromString(html, 'text/html');
+        }
+
+        if (
+            typeof document !== 'undefined' &&
+            typeof document.implementation?.createHTMLDocument === 'function'
+        ) {
+            const d = document.implementation.createHTMLDocument('');
+            d.documentElement.innerHTML = html;
+            return d;
+        }
+
+        throw new Error('无效的书签 HTML 格式：DOMParser 不可用');
+    })();
 
     // 找到主要的 DL 元素
     const mainDL = doc.querySelector('DL');
@@ -42,19 +58,52 @@ export function parseBookmarkHtml(html: string): ParsedItem[] {
 function parseDL(dl: Element): ParsedItem[] {
     const items: ParsedItem[] = [];
 
-    // 遍历子 DT 元素
     const children = Array.from(dl.children);
 
-    for (const child of children) {
-        if (child.tagName === 'DT') {
-            const item = parseDT(child);
-            if (item) {
-                items.push(item);
-            }
-        } else if (child.tagName === 'DL') {
-            // 如果直接遇到 DL，递归解析
-            items.push(...parseDL(child));
+    const tokens: Element[] = [];
+    for (const el of children) {
+        if (el.tagName === 'P') {
+            tokens.push(...Array.from(el.children));
+        } else {
+            tokens.push(el);
         }
+    }
+
+    const nextNonP = (start: number): { el: Element | undefined; index: number } => {
+        let idx = start;
+        while (idx < tokens.length) {
+            const el = tokens[idx];
+            if (el.tagName !== 'P') return { el, index: idx };
+            idx++;
+        }
+        return { el: undefined, index: tokens.length };
+    };
+
+    for (let i = 0; i < tokens.length; i++) {
+        const child = tokens[i];
+        if (child.tagName !== 'DT') continue;
+
+        const item = parseDT(child);
+        if (!item) continue;
+
+        let next = nextNonP(i + 1);
+        if (next.el?.tagName === 'DD') {
+            const notes = next.el.textContent?.trim();
+            if (notes) item.notes = notes;
+            i = next.index;
+            next = nextNonP(i + 1);
+        }
+
+        if (item.type === 'folder') {
+            if (next.el?.tagName === 'DL') {
+                if (item.children.length === 0) {
+                    item.children = parseDL(next.el);
+                }
+                i = next.index;
+            }
+        }
+
+        items.push(item);
     }
 
     return items;
@@ -70,8 +119,7 @@ function parseDT(dt: Element): ParsedItem | null {
         // 这是一个文件夹
         const title = h3.textContent?.trim() || '未命名文件夹';
 
-        // 找到对应的 DL（子项列表）
-        const childDL = dt.querySelector(':scope > DL');
+        const childDL = dt.querySelector(':scope > DL') ?? dt.querySelector('DL');
         const children = childDL ? parseDL(childDL) : [];
 
         return {
@@ -87,10 +135,29 @@ function parseDT(dt: Element): ParsedItem | null {
         const title = a.textContent?.trim() || '未命名书签';
         const url = a.getAttribute('HREF') || a.getAttribute('href') || '';
 
+        if (url.startsWith('place:')) {
+            return null;
+        }
+
+        const rawTags = a.getAttribute('TAGS') || a.getAttribute('tags') || '';
+        const tags = rawTags
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean);
+
+        const iconUrl =
+            a.getAttribute('ICON_URI') ||
+            a.getAttribute('icon_uri') ||
+            a.getAttribute('ICON') ||
+            a.getAttribute('icon') ||
+            undefined;
+
         return {
             type: 'bookmark',
             title,
             url,
+            iconUrl,
+            tags: tags.length > 0 ? tags : undefined,
             children: [],
         };
     }
@@ -124,6 +191,18 @@ export function convertToNodes(
 
         if (item.type === 'bookmark' && item.url) {
             node.url = item.url;
+        }
+
+        if (item.iconUrl) {
+            node.iconUrl = item.iconUrl;
+        }
+
+        if (item.tags && item.tags.length > 0) {
+            node.tags = item.tags;
+        }
+
+        if (item.notes) {
+            node.notes = item.notes;
         }
 
         nodes.push(node);

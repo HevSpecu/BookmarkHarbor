@@ -28,6 +28,7 @@ export interface Node {
     iconAssetId?: string;
     iconSource?: IconSource;
     notes?: string;
+    tags?: string[];
     isFavorite?: boolean;
     isReadLater?: boolean;
     createdAt: number; // Unix timestamp (ms)
@@ -52,6 +53,7 @@ export interface UpdateNodeRequest {
     iconAssetId?: string;
     iconSource?: IconSource;
     notes?: string;
+    tags?: string[];
     isFavorite?: boolean;
     isReadLater?: boolean;
 }

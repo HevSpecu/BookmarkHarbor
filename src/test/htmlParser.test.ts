@@ -70,6 +70,45 @@ describe('parseBookmarkHtml', () => {
     it('should throw error for invalid HTML', () => {
         expect(() => parseBookmarkHtml('<div>No DL element</div>')).toThrow();
     });
+
+    it('should associate sibling DL/DD with preceding DT (netscape format)', () => {
+        const html = `
+        <!DOCTYPE NETSCAPE-Bookmark-file-1>
+        <DL><p>
+            <DT><H3>Folder</H3>
+            <DD>Folder note</DD>
+            <DL><p>
+                <DT><A HREF="https://example.com" TAGS="a,b">Example</A>
+                <DD>Bookmark note</DD>
+            </DL><p>
+        </DL><p>
+        `;
+
+        const result = parseBookmarkHtml(html);
+        expect(result).toHaveLength(1);
+        expect(result[0].type).toBe('folder');
+        expect(result[0].title).toBe('Folder');
+        expect(result[0].notes).toBe('Folder note');
+        expect(result[0].children).toHaveLength(1);
+        expect(result[0].children[0].type).toBe('bookmark');
+        expect(result[0].children[0].title).toBe('Example');
+        expect(result[0].children[0].tags).toEqual(['a', 'b']);
+        expect(result[0].children[0].notes).toBe('Bookmark note');
+    });
+
+    it('should skip firefox place: smart bookmarks', () => {
+        const html = `
+        <!DOCTYPE NETSCAPE-Bookmark-file-1>
+        <DL><p>
+            <DT><A HREF="place:sort=8&maxResults=10">Most Visited</A>
+            <DT><A HREF="https://example.com">Example</A>
+        </DL><p>
+        `;
+        const result = parseBookmarkHtml(html);
+        expect(result).toHaveLength(1);
+        expect(result[0].type).toBe('bookmark');
+        expect(result[0].url).toBe('https://example.com');
+    });
 });
 
 describe('convertToNodes', () => {
