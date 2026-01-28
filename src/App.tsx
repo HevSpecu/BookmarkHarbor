@@ -299,6 +299,55 @@ export function App() {
     const selection = useSelection({ visibleNodes });
     const history = useHistory({ limit: 200 });
 
+    type UpdatePatch = Parameters<typeof updateNode>[1];
+    type UpdateEntry = { id: string; patch: UpdatePatch };
+
+    const applyNodeUpdates = useCallback((updates: UpdateEntry[], options?: { mergeKey?: string; label?: string }) => {
+        const normalized: Array<{ id: string; patch: UpdatePatch; before: UpdatePatch }> = [];
+
+        updates.forEach(({ id, patch }) => {
+            const node = nodes[id];
+            if (!node) return;
+
+            const diff = {} as UpdatePatch;
+            const before = {} as UpdatePatch;
+
+            (Object.keys(patch) as Array<keyof UpdatePatch>).forEach((key) => {
+                const nextValue = patch[key];
+                const prevValue = node[key as keyof Node] as UpdatePatch[keyof UpdatePatch];
+                if (prevValue !== nextValue) {
+                    (diff as Record<keyof UpdatePatch, UpdatePatch[keyof UpdatePatch]>)[key] =
+                        nextValue as UpdatePatch[keyof UpdatePatch];
+                    (before as Record<keyof UpdatePatch, UpdatePatch[keyof UpdatePatch]>)[key] =
+                        prevValue as UpdatePatch[keyof UpdatePatch];
+                }
+            });
+
+            if (Object.keys(diff).length > 0) {
+                normalized.push({ id, patch: diff, before });
+            }
+        });
+
+        if (normalized.length === 0) return;
+
+        normalized.forEach(({ id, patch }) => updateNode(id, patch));
+
+        const mergeKey = options?.mergeKey && normalized.length === 1
+            ? `${options.mergeKey}:${normalized[0].id}`
+            : options?.mergeKey;
+
+        history.record({
+            label: options?.label,
+            mergeKey,
+            undo: () => {
+                normalized.forEach(({ id, before }) => updateNode(id, before));
+            },
+            redo: () => {
+                normalized.forEach(({ id, patch }) => updateNode(id, patch));
+            },
+        });
+    }, [history, nodes, updateNode]);
+
     // 处理语言切换
     const handleLocaleChange = useCallback((newLocale: Locale) => {
         setLocale(newLocale);
@@ -565,53 +614,6 @@ export function App() {
             console.error('Export failed:', error);
         }
     }, [nodes, currentFolderId, selection.selectedIds]);
-
-    type UpdatePatch = Parameters<typeof updateNode>[1];
-    type UpdateEntry = { id: string; patch: UpdatePatch };
-
-    const applyNodeUpdates = useCallback((updates: UpdateEntry[], options?: { mergeKey?: string; label?: string }) => {
-        const normalized: Array<{ id: string; patch: UpdatePatch; before: UpdatePatch }> = [];
-
-        updates.forEach(({ id, patch }) => {
-            const node = nodes[id];
-            if (!node) return;
-
-            const diff: UpdatePatch = {};
-            const before: UpdatePatch = {};
-
-            (Object.keys(patch) as Array<keyof UpdatePatch>).forEach((key) => {
-                const nextValue = patch[key];
-                const prevValue = node[key as keyof Node] as UpdatePatch[keyof UpdatePatch];
-                if (prevValue !== nextValue) {
-                    diff[key] = nextValue;
-                    before[key] = prevValue;
-                }
-            });
-
-            if (Object.keys(diff).length > 0) {
-                normalized.push({ id, patch: diff, before });
-            }
-        });
-
-        if (normalized.length === 0) return;
-
-        normalized.forEach(({ id, patch }) => updateNode(id, patch));
-
-        const mergeKey = options?.mergeKey && normalized.length === 1
-            ? `${options.mergeKey}:${normalized[0].id}`
-            : options?.mergeKey;
-
-        history.record({
-            label: options?.label,
-            mergeKey,
-            undo: () => {
-                normalized.forEach(({ id, before }) => updateNode(id, before));
-            },
-            redo: () => {
-                normalized.forEach(({ id, patch }) => updateNode(id, patch));
-            },
-        });
-    }, [history, nodes, updateNode]);
 
     // 更新节点
     const handleUpdateNode = useCallback((id: string, updates: Parameters<typeof updateNode>[1]) => {
