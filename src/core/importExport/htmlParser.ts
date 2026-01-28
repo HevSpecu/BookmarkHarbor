@@ -79,6 +79,28 @@ function parseDL(dl: Element): ParsedItem[] {
         return { el: undefined, index: tokens.length };
     };
 
+    const extractNotesFromDD = (dd: Element): string | undefined => {
+        const dlChild = dd.querySelector('DL');
+        if (!dlChild) {
+            const text = dd.textContent?.trim();
+            return text || undefined;
+        }
+
+        const parts: string[] = [];
+        const nodes = Array.from(dd.childNodes);
+        for (const node of nodes) {
+            if (node.nodeType === 1 && (node as Element).tagName === 'DL') {
+                break;
+            }
+            if (node.textContent) {
+                parts.push(node.textContent);
+            }
+        }
+
+        const merged = parts.join(' ').replace(/\s+/g, ' ').trim();
+        return merged || undefined;
+    };
+
     for (let i = 0; i < tokens.length; i++) {
         const child = tokens[i];
         if (child.tagName !== 'DT') continue;
@@ -87,15 +109,21 @@ function parseDL(dl: Element): ParsedItem[] {
         if (!item) continue;
 
         let next = nextNonP(i + 1);
+        let childDLFromNotes: Element | null = null;
         if (next.el?.tagName === 'DD') {
-            const notes = next.el.textContent?.trim();
+            const notes = extractNotesFromDD(next.el);
             if (notes) item.notes = notes;
+            childDLFromNotes = next.el.querySelector(':scope > DL') ?? next.el.querySelector('DL');
             i = next.index;
             next = nextNonP(i + 1);
         }
 
         if (item.type === 'folder') {
-            if (next.el?.tagName === 'DL') {
+            if (childDLFromNotes) {
+                if (item.children.length === 0) {
+                    item.children = parseDL(childDLFromNotes);
+                }
+            } else if (next.el?.tagName === 'DL') {
                 if (item.children.length === 0) {
                     item.children = parseDL(next.el);
                 }

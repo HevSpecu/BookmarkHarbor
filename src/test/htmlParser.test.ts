@@ -96,6 +96,32 @@ describe('parseBookmarkHtml', () => {
         expect(result[0].children[0].notes).toBe('Bookmark note');
     });
 
+    it('should parse folder children when DL is nested inside DD', () => {
+        const html = `
+        <!DOCTYPE NETSCAPE-Bookmark-file-1>
+        <DL><p>
+            <DT><H3>Toolbar</H3>
+            <DD>Toolbar note
+            <DL><p>
+                <DT><H3>News</H3>
+                <DL><p>
+                    <DT><A HREF="https://example.com">Example</A>
+                </DL><p>
+            </DL><p>
+        </DL><p>
+        `;
+
+        const result = parseBookmarkHtml(html);
+        expect(result).toHaveLength(1);
+        expect(result[0].title).toBe('Toolbar');
+        expect(result[0].notes).toBe('Toolbar note');
+        expect(result[0].children).toHaveLength(1);
+        expect(result[0].children[0].type).toBe('folder');
+        expect(result[0].children[0].title).toBe('News');
+        expect(result[0].children[0].children).toHaveLength(1);
+        expect(result[0].children[0].children[0].type).toBe('bookmark');
+    });
+
     it('should skip firefox place: smart bookmarks', () => {
         const html = `
         <!DOCTYPE NETSCAPE-Bookmark-file-1>
