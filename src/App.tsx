@@ -427,6 +427,9 @@ export function App() {
                         onExport={handleExport}
                         onDelete={handleDelete}
                         selectedCount={selection.selectedIds.size}
+                        onSelectAll={selection.selectAll}
+                        onClearSelection={selection.clearSelection}
+                        onInvertSelection={selection.invertSelection}
                     />
 
                     {/* 内容列表 */}
