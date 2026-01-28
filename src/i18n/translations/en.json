@@ -36,8 +36,18 @@
         "descending": "Descending"
     },
     "viewMode": {
-        "grid": "Grid View",
-        "list": "List View"
+        "list": "List View",
+        "card": "Card View",
+        "tile": "Tile View"
+    },
+    "settings": {
+        "title": "Settings",
+        "appearance": "Appearance",
+        "behavior": "Behavior",
+        "theme": "Theme",
+        "language": "Language",
+        "autoExpandTree": "Auto expand folder tree",
+        "cardFolderPreviewSize": "Folder preview size"
     },
     "theme": {
         "light": "Light",
@@ -63,7 +73,8 @@
         "changeCover": "Change Cover",
         "fetchMetadata": "Auto Fetch",
         "pasteUrl": "Paste image URL...",
-        "close": "Close"
+        "close": "Close",
+        "customColor": "Custom color"
     },
     "search": {
         "placeholder": "Search bookmarks...",
@@ -145,11 +156,13 @@
         "switchLanguage": "Switch language",
         "switchTheme": "Switch theme",
         "clearSearch": "Clear search",
-        "gridView": "Grid view",
         "listView": "List view",
+        "cardView": "Card view",
+        "tileView": "Tile view",
         "close": "Close",
         "expand": "Expand",
         "collapse": "Collapse",
-        "skipToContent": "Skip to content"
+        "skipToContent": "Skip to content",
+        "openSettings": "Open settings"
     }
 }
