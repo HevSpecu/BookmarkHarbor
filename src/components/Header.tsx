@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
                         size="sm"
                         startContent={<Icon icon="lucide:plus" className="w-4 h-4" aria-hidden="true" />}
                         onPress={onNewBookmark}
-                        className="bg-[var(--color-primary)] text-white hover:opacity-90 shadow-[0_8px_24px_rgba(var(--color-primary-rgb),0.25)]"
+                        className="bg-[var(--color-primary)] text-white hover:opacity-90 shadow-[0_4px_12px_rgba(var(--color-primary-rgb),0.18)]"
                     >
                         {t('toolbar.newBookmark')}
                     </Button>
