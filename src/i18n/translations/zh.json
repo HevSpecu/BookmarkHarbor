@@ -1,0 +1,123 @@
+{
+    "app": {
+        "title": "AuraBookmarks",
+        "allBookmarks": "全部书签"
+    },
+    "sidebar": {
+        "title": "文件夹",
+        "empty": "暂无文件夹"
+    },
+    "toolbar": {
+        "newFolder": "新建文件夹",
+        "newBookmark": "新建书签",
+        "import": "导入",
+        "export": "导出",
+        "delete": "删除"
+    },
+    "viewMode": {
+        "grid": "网格视图",
+        "list": "列表视图"
+    },
+    "theme": {
+        "light": "浅色",
+        "dark": "深色",
+        "system": "跟随系统"
+    },
+    "language": {
+        "zh": "中文",
+        "en": "English"
+    },
+    "inspector": {
+        "title": "属性",
+        "preview": "预览",
+        "name": "名称",
+        "url": "网址",
+        "color": "颜色",
+        "notes": "备注",
+        "type": "类型",
+        "created": "创建时间",
+        "updated": "修改时间",
+        "folder": "文件夹",
+        "bookmark": "书签",
+        "changeCover": "更换封面",
+        "fetchMetadata": "自动获取",
+        "pasteUrl": "粘贴图片链接...",
+        "close": "关闭"
+    },
+    "search": {
+        "placeholder": "搜索书签...",
+        "noResults": "未找到相关书签",
+        "scopeAll": "全部",
+        "scopeCurrent": "当前文件夹"
+    },
+    "empty": {
+        "title": "暂无内容",
+        "description": "点击上方按钮创建文件夹或书签",
+        "noBookmarks": "暂无书签"
+    },
+    "contextMenu": {
+        "open": "打开",
+        "openInNewTab": "在新标签页打开",
+        "rename": "重命名",
+        "delete": "删除",
+        "moveTo": "移动到...",
+        "copyUrl": "复制链接",
+        "edit": "编辑"
+    },
+    "dialog": {
+        "confirm": "确认",
+        "cancel": "取消",
+        "save": "保存",
+        "delete": "删除",
+        "deleteConfirm": "确定要删除选中的 {count} 个项目吗？",
+        "deleteWarning": "此操作无法撤销"
+    },
+    "import": {
+        "title": "导入书签",
+        "selectFiles": "选择文件",
+        "dropHint": "拖放 HTML 文件到这里",
+        "targetFolder": "导入到",
+        "currentFolder": "当前文件夹",
+        "selectFolder": "选择文件夹",
+        "importing": "正在导入...",
+        "success": "导入成功",
+        "created": "已创建 {count} 个项目",
+        "errors": "有 {count} 个错误"
+    },
+    "export": {
+        "title": "导出书签",
+        "all": "全部书签",
+        "currentFolder": "当前文件夹",
+        "selection": "选中项目",
+        "exporting": "正在导出...",
+        "success": "导出成功"
+    },
+    "error": {
+        "unknown": "未知错误",
+        "networkError": "网络错误",
+        "corsBlocked": "无法访问该网站（CORS 限制）",
+        "fetchTimeout": "请求超时",
+        "invalidUrl": "无效的网址",
+        "storageFull": "存储空间已满"
+    },
+    "toast": {
+        "copied": "已复制到剪贴板",
+        "saved": "已保存",
+        "deleted": "已删除",
+        "moved": "已移动",
+        "renamed": "已重命名"
+    },
+    "aria": {
+        "toggleSidebar": "切换侧边栏",
+        "toggleInspector": "切换属性面板",
+        "switchLanguage": "切换语言",
+        "switchTheme": "切换主题",
+        "clearSearch": "清除搜索",
+        "gridView": "网格视图",
+        "listView": "列表视图",
+        "close": "关闭",
+        "expand": "展开",
+        "collapse": "收起",
+        "skipToContent": "跳到主要内容"
+    }
+}

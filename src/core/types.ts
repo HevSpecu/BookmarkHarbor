@@ -1,0 +1,185 @@
+/**
+ * AuraBookmarks 核心类型定义
+ * 基于 spec/01-requirements.md 和 spec/02-design.md
+ */
+
+// 节点类型
+export type NodeType = 'folder' | 'bookmark';
+
+// 封面类型
+export type CoverType = 'none' | 'uploaded' | 'remote' | 'generated';
+
+// 图标来源
+export type IconSource = 'favicon' | 'user' | 'apple-touch' | 'other';
+
+// 基础节点接口
+export interface Node {
+    id: string;
+    type: NodeType;
+    parentId: string | null;
+    title: string;
+    url?: string; // 仅 bookmark
+    orderKey: string; // 排序键（LexoRank 风格）
+    color?: string; // hex 颜色
+    coverUrl?: string;
+    coverType?: CoverType;
+    coverAssetId?: string;
+    iconUrl?: string;
+    iconAssetId?: string;
+    iconSource?: IconSource;
+    notes?: string;
+    createdAt: number; // Unix timestamp (ms)
+    updatedAt: number;
+    deletedAt?: number | null; // 软删除
+}
+
+// 创建节点请求
+export type CreateNodeRequest =
+    | { type: 'folder'; parentId: string; title: string; orderKey?: string }
+    | { type: 'bookmark'; parentId: string; title: string; url: string; orderKey?: string };
+
+// 更新节点请求
+export interface UpdateNodeRequest {
+    title?: string;
+    url?: string;
+    color?: string;
+    coverUrl?: string;
+    coverType?: CoverType;
+    coverAssetId?: string;
+    iconUrl?: string;
+    iconAssetId?: string;
+    iconSource?: IconSource;
+    notes?: string;
+}
+
+// 移动节点请求
+export interface MoveNodesRequest {
+    nodeIds: string[];
+    toParentId: string;
+    beforeId?: string; // 插到某节点之前
+    afterId?: string;  // 插到某节点之后
+}
+
+// 删除节点请求
+export interface DeleteNodesRequest {
+    nodeIds: string[];
+    hard?: boolean; // 是否硬删除
+}
+
+// 资源（封面/图标上传）
+export interface Asset {
+    id: string;
+    kind: 'cover' | 'icon';
+    mime: string;
+    storageKey: string; // base64 data URL 或文件路径
+    sizeBytes: number;
+    width?: number;
+    height?: number;
+    sha256?: string;
+    createdAt: number;
+}
+
+// URL 元信息缓存
+export interface UrlMetadataCache {
+    url: string;
+    title?: string;
+    description?: string;
+    ogImageUrl?: string;
+    bestIconUrl?: string;
+    icons?: Array<{ url: string; sizes?: string; type?: string; rel?: string }>;
+    fetchedAt: number;
+}
+
+// 元信息抓取响应
+export interface MetadataResponse {
+    url: string;
+    title?: string;
+    description?: string;
+    ogImageUrl?: string;
+    icons: Array<{ url: string; sizes?: string; type?: string; rel?: string }>;
+    bestIconUrl?: string;
+}
+
+// 导入 HTML 响应
+export interface ImportHtmlResult {
+    fileName: string;
+    importRootId: string;
+    created: number;
+    skipped: number;
+    errors: string[];
+}
+
+// 导出范围
+export type ExportScope = 'all' | 'folder' | 'selection';
+
+// 视图模式
+export type ViewMode = 'grid' | 'list';
+
+// 主题
+export type Theme = 'light' | 'dark' | 'system';
+
+// 语言
+export type Locale = 'zh' | 'en';
+
+// 应用状态
+export interface AppState {
+    // 导航
+    currentFolderId: string;
+    breadcrumbs: Array<{ id: string; title: string }>;
+
+    // 选择
+    selectedIds: Set<string>;
+    anchorId: string | null; // 用于 Shift 范围选择
+
+    // UI
+    sidebarOpen: boolean;
+    inspectorOpen: boolean;
+    viewMode: ViewMode;
+    theme: Theme;
+    locale: Locale;
+
+    // 搜索
+    searchQuery: string;
+    searchScope: 'all' | 'current';
+
+    // 展开的文件夹（侧边栏）
+    expandedFolders: Set<string>;
+}
+
+// 持久化存储结构
+export interface StorageData {
+    version: number;
+    nodes: Record<string, Node>;
+    assets: Record<string, Asset>;
+    metadataCache: Record<string, UrlMetadataCache>;
+    settings: {
+        theme: Theme;
+        locale: Locale;
+        viewMode: ViewMode;
+        sidebarOpen: boolean;
+    };
+}
+
+// 初始化存储数据
+export const DEFAULT_STORAGE_DATA: StorageData = {
+    version: 1,
+    nodes: {
+        root: {
+            id: 'root',
+            type: 'folder',
+            parentId: null,
+            title: 'All Bookmarks',
+            orderKey: 'a0',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        },
+    },
+    assets: {},
+    metadataCache: {},
+    settings: {
+        theme: 'system',
+        locale: 'zh',
+        viewMode: 'grid',
+        sidebarOpen: true,
+    },
+};
