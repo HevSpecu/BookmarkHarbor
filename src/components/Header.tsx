@@ -182,21 +182,33 @@ export const Header: React.FC<HeaderProps> = ({
                 <ButtonGroup size="sm">
                     <Button
                         isIconOnly
-                        variant={viewMode === 'grid' ? 'solid' : 'flat'}
-                        color={viewMode === 'grid' ? 'primary' : 'default'}
-                        onPress={() => onViewModeChange('grid')}
-                        aria-label={t('aria.gridView')}
+                        variant={viewMode === 'list' ? 'solid' : 'light'}
+                        color={viewMode === 'list' ? 'primary' : 'default'}
+                        onPress={() => onViewModeChange('list')}
+                        aria-label={t('aria.listView')}
+                        className={viewMode !== 'list' ? 'text-gray-600 dark:text-gray-400' : ''}
+                    >
+                        <Icon icon="lucide:list" className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                    <Button
+                        isIconOnly
+                        variant={viewMode === 'card' ? 'solid' : 'light'}
+                        color={viewMode === 'card' ? 'primary' : 'default'}
+                        onPress={() => onViewModeChange('card')}
+                        aria-label={t('aria.cardView')}
+                        className={viewMode !== 'card' ? 'text-gray-600 dark:text-gray-400' : ''}
                     >
                         <Icon icon="lucide:grid-2x2" className="h-4 w-4" aria-hidden="true" />
                     </Button>
                     <Button
                         isIconOnly
-                        variant={viewMode === 'list' ? 'solid' : 'flat'}
-                        color={viewMode === 'list' ? 'primary' : 'default'}
-                        onPress={() => onViewModeChange('list')}
-                        aria-label={t('aria.listView')}
+                        variant={viewMode === 'tile' ? 'solid' : 'light'}
+                        color={viewMode === 'tile' ? 'primary' : 'default'}
+                        onPress={() => onViewModeChange('tile')}
+                        aria-label={t('aria.tileView')}
+                        className={viewMode !== 'tile' ? 'text-gray-600 dark:text-gray-400' : ''}
                     >
-                        <Icon icon="lucide:list" className="h-4 w-4" aria-hidden="true" />
+                        <Icon icon="lucide:layout-grid" className="h-4 w-4" aria-hidden="true" />
                     </Button>
                 </ButtonGroup>
 

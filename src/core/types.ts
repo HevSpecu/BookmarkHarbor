@@ -119,7 +119,10 @@ export type SortField = 'title' | 'updatedAt' | 'createdAt' | 'type';
 export type SortOrder = 'asc' | 'desc';
 
 // 视图模式
-export type ViewMode = 'grid' | 'list';
+export type ViewMode = 'list' | 'card' | 'tile';
+
+// 卡片文件夹预览尺寸
+export type CardFolderPreviewSize = '2x2' | '3x3' | '4x3';
 
 // 主题
 export type Theme = 'light' | 'dark' | 'system';
@@ -163,6 +166,9 @@ export interface StorageData {
         locale: Locale;
         viewMode: ViewMode;
         sidebarOpen: boolean;
+        autoExpandTree: boolean;
+        cardFolderPreviewSize: CardFolderPreviewSize;
+        customColors: string[];
     };
 }
 
@@ -185,7 +191,10 @@ export const DEFAULT_STORAGE_DATA: StorageData = {
     settings: {
         theme: 'system',
         locale: 'zh',
-        viewMode: 'grid',
+        viewMode: 'card',
         sidebarOpen: true,
+        autoExpandTree: false,
+        cardFolderPreviewSize: '2x2',
+        customColors: [],
     },
 };

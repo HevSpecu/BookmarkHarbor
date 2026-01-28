@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { ScrollShadow, Button, Avatar } from '@heroui/react';
+import { ScrollShadow, Button } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import { useDroppable } from '@dnd-kit/core';
@@ -183,6 +183,11 @@ interface SidebarProps {
     onFolderClick: (id: string) => void;
     onToggleExpand: (id: string) => void;
     onNewFolder?: () => void;
+    onOpenSettings?: () => void;
+    onNavigateToFavorites?: () => void;
+    onNavigateToReadLater?: () => void;
+    onNavigateToTrash?: () => void;
+    currentView?: 'bookmarks' | 'favorites' | 'readLater' | 'trash';
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -193,6 +198,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onFolderClick,
     onToggleExpand,
     onNewFolder,
+    onOpenSettings,
+    onNavigateToFavorites,
+    onNavigateToReadLater,
+    onNavigateToTrash,
+    currentView = 'bookmarks',
 }) => {
     const { t } = useTranslation();
     const rootNode = nodes[rootId];
@@ -225,29 +235,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <NavItem
                             icon="lucide:bookmark"
                             label={t('app.allBookmarks')}
-                            isActive={currentFolderId === 'root'}
+                            isActive={currentView === 'bookmarks' && currentFolderId === 'root'}
                             onClick={() => onFolderClick('root')}
                             color="#3b82f6"
                         />
                         <NavItem
                             icon="lucide:star"
                             label={t('sidebar.favorites')}
-                            isActive={false}
-                            onClick={() => {}}
+                            isActive={currentView === 'favorites'}
+                            onClick={() => onNavigateToFavorites?.()}
                             color="#eab308"
                         />
                         <NavItem
                             icon="lucide:clock"
                             label={t('sidebar.readingList')}
-                            isActive={false}
-                            onClick={() => {}}
+                            isActive={currentView === 'readLater'}
+                            onClick={() => onNavigateToReadLater?.()}
                             color="#22c55e"
                         />
                         <NavItem
                             icon="lucide:trash-2"
                             label={t('sidebar.trash')}
-                            isActive={false}
-                            onClick={() => {}}
+                            isActive={currentView === 'trash'}
+                            onClick={() => onNavigateToTrash?.()}
                             color="#6b7280"
                         />
                     </div>
@@ -295,23 +305,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
             </ScrollShadow>
 
-            {/* User Profile */}
+            {/* Settings */}
             <div className="flex-shrink-0 p-3 border-t border-gray-200/50 dark:border-white/5">
-                <div className="flex items-center gap-3 px-2 py-1.5">
-                    <Avatar
-                        size="sm"
-                        name="U"
-                        className="bg-primary-500 text-white text-xs"
-                    />
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {t('sidebar.user')}
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                            {t('sidebar.localMode')}
-                        </p>
-                    </div>
-                </div>
+                <Button
+                    variant="light"
+                    className="w-full justify-start gap-3 px-3 py-2 text-gray-600 dark:text-gray-400"
+                    onPress={onOpenSettings}
+                    startContent={<Icon icon="lucide:settings" className="w-5 h-5" aria-hidden="true" />}
+                >
+                    {t('settings.title')}
+                </Button>
             </div>
         </aside>
     );

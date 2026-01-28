@@ -7,7 +7,7 @@ import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import type { Node, ViewMode } from '../core/types';
+import type { Node, ViewMode, CardFolderPreviewSize } from '../core/types';
 import { BookmarkItem } from './BookmarkItem';
 import { SortableBookmarkItem } from './SortableBookmarkItem';
 import { cn } from '../core/utils';
@@ -20,11 +20,13 @@ type ModifierKeys = {
 
 interface ContentAreaProps {
     nodes: Node[];
+    allNodes: Record<string, Node>;
     folderId: string;
     viewMode: ViewMode;
     selectedIds: Set<string>;
     renamingId: string | null;
     searchQuery: string;
+    cardFolderPreviewSize: CardFolderPreviewSize;
     onSelect: (id: string, keys: ModifierKeys) => void;
     onDoubleClick: (node: Node) => void;
     onClearSelection: () => void;
@@ -34,11 +36,13 @@ interface ContentAreaProps {
 
 export const ContentArea: React.FC<ContentAreaProps> = ({
     nodes,
+    allNodes,
     folderId,
     viewMode,
     selectedIds,
     renamingId,
     searchQuery,
+    cardFolderPreviewSize,
     onSelect,
     onDoubleClick,
     onClearSelection,
@@ -52,8 +56,20 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     });
 
     const sortingStrategy = useMemo(() => {
-        return viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy;
+        return viewMode === 'list' ? verticalListSortingStrategy : rectSortingStrategy;
     }, [viewMode]);
+
+    // Helper to get child nodes for a folder
+    const getChildNodes = (parentId: string) => {
+        return Object.values(allNodes)
+            .filter(n => n.parentId === parentId && !n.deletedAt)
+            .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+    };
+
+    // Helper to get child count for a folder
+    const getChildCount = (parentId: string) => {
+        return Object.values(allNodes).filter(n => n.parentId === parentId && !n.deletedAt).length;
+    };
 
     // Separate folders and bookmarks
     const folders = useMemo(() => nodes.filter(n => n.type === 'folder'), [nodes]);
@@ -98,6 +114,9 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                     onDoubleClick={() => onDoubleClick(node)}
                     onRenameSubmit={(newTitle) => onRenameSubmit(node.id, newTitle)}
                     onRenameCancel={onRenameCancel}
+                    childCount={node.type === 'folder' ? getChildCount(node.id) : 0}
+                    childNodes={node.type === 'folder' ? getChildNodes(node.id) : []}
+                    cardFolderPreviewSize={cardFolderPreviewSize}
                 />
             ));
         }
@@ -115,10 +134,28 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                         onDoubleClick={onDoubleClick}
                         onRenameSubmit={onRenameSubmit}
                         onRenameCancel={onRenameCancel}
+                        childCount={node.type === 'folder' ? getChildCount(node.id) : 0}
+                        childNodes={node.type === 'folder' ? getChildNodes(node.id) : []}
+                        cardFolderPreviewSize={cardFolderPreviewSize}
                     />
                 ))}
             </SortableContext>
         );
+    };
+
+    // Get grid class based on view mode
+    const getGridClass = (forFolders = false) => {
+        if (viewMode === 'list') {
+            return 'flex flex-col gap-1';
+        }
+        if (viewMode === 'tile') {
+            return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3';
+        }
+        // card view
+        if (forFolders) {
+            return 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4';
+        }
+        return 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4';
     };
 
     // When searching, show all results together
@@ -132,11 +169,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                 }}
             >
                 <div
-                    className={cn(
-                        viewMode === 'grid'
-                            ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
-                            : 'flex flex-col gap-1'
-                    )}
+                    className={cn(getGridClass())}
                     onPointerDown={(e) => {
                         if (e.target === e.currentTarget) onClearSelection();
                     }}
@@ -162,11 +195,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                         {t('content.subfolders')}
                     </h2>
                     <div
-                        className={cn(
-                            viewMode === 'grid'
-                                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'
-                                : 'flex flex-col gap-1'
-                        )}
+                        className={cn(getGridClass(true))}
                         onPointerDown={(e) => {
                             if (e.target === e.currentTarget) onClearSelection();
                         }}
@@ -183,11 +212,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                         {t('content.bookmarks')}
                     </h2>
                     <div
-                        className={cn(
-                            viewMode === 'grid'
-                                ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
-                                : 'flex flex-col gap-1'
-                        )}
+                        className={cn(getGridClass())}
                         onPointerDown={(e) => {
                             if (e.target === e.currentTarget) onClearSelection();
                         }}

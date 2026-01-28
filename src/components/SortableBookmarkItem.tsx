@@ -6,7 +6,7 @@ import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Node, ViewMode } from '../core/types';
+import type { Node, ViewMode, CardFolderPreviewSize } from '../core/types';
 import { cn } from '../core/utils';
 import { BookmarkItem } from './BookmarkItem';
 
@@ -44,6 +44,9 @@ interface SortableBookmarkItemProps {
     onDoubleClick: (node: Node) => void;
     onRenameSubmit: (id: string, newTitle: string) => void;
     onRenameCancel: () => void;
+    childCount?: number;
+    childNodes?: Node[];
+    cardFolderPreviewSize?: CardFolderPreviewSize;
 }
 
 export function SortableBookmarkItem({
@@ -55,6 +58,9 @@ export function SortableBookmarkItem({
     onDoubleClick,
     onRenameSubmit,
     onRenameCancel,
+    childCount = 0,
+    childNodes = [],
+    cardFolderPreviewSize = '2x2',
 }: SortableBookmarkItemProps) {
     const {
         attributes,
@@ -94,6 +100,9 @@ export function SortableBookmarkItem({
                 onDoubleClick={() => onDoubleClick(node)}
                 onRenameSubmit={(newTitle) => onRenameSubmit(node.id, newTitle)}
                 onRenameCancel={onRenameCancel}
+                childCount={childCount}
+                childNodes={childNodes}
+                cardFolderPreviewSize={cardFolderPreviewSize}
             />
         </div>
     );

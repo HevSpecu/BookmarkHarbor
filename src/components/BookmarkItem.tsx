@@ -19,13 +19,15 @@ type ModifierKeys = {
 interface BookmarkItemProps {
     node: Node;
     isSelected: boolean;
-    viewMode: 'grid' | 'list';
+    viewMode: 'list' | 'card' | 'tile';
     isRenaming: boolean;
     onSelect: (keys: ModifierKeys) => void;
     onDoubleClick: () => void;
     onRenameSubmit: (newTitle: string) => void;
     onRenameCancel: () => void;
     childCount?: number;
+    childNodes?: Node[];
+    cardFolderPreviewSize?: '2x2' | '3x3' | '4x3';
 }
 
 const FOLDER_COLORS = ['#f97316', '#a855f7', '#22c55e', '#3b82f6', '#ec4899', '#14b8a6'];
@@ -46,6 +48,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     onRenameSubmit,
     onRenameCancel,
     childCount = 0,
+    childNodes = [],
+    cardFolderPreviewSize = '2x2',
 }) => {
     const { t } = useTranslation();
     const [renameValue, setRenameValue] = useState(node.title);
@@ -74,8 +78,18 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     const isFolder = node.type === 'folder';
     const folderColor = getFolderColor(node.id, node.color);
 
-    // Folder card in grid view - horizontal style matching reference
-    if (viewMode === 'grid' && isFolder) {
+    // Helper to get preview grid dimensions
+    const getPreviewGrid = () => {
+        switch (cardFolderPreviewSize) {
+            case '2x2': return { cols: 2, rows: 2 };
+            case '3x3': return { cols: 3, rows: 3 };
+            case '4x3': return { cols: 4, rows: 3 };
+            default: return { cols: 2, rows: 2 };
+        }
+    };
+
+    // Tile view - folder style for both folders and bookmarks
+    if (viewMode === 'tile') {
         return (
             <Card
                 isPressable={!isRenaming}
@@ -98,20 +112,42 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 )}
             >
                 <CardBody className="flex flex-row items-center gap-3 p-3">
-                    {/* Folder Icon */}
+                    {/* Icon */}
                     <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: `${folderColor}20` }}
+                        style={{ backgroundColor: `${node.color || folderColor}20` }}
                     >
-                        <Icon
-                            icon="lucide:folder"
-                            className="w-5 h-5"
-                            style={{ color: folderColor }}
-                            aria-hidden="true"
-                        />
+                        {isFolder ? (
+                            <Icon
+                                icon="lucide:folder"
+                                className="w-5 h-5"
+                                style={{ color: folderColor }}
+                                aria-hidden="true"
+                            />
+                        ) : node.iconUrl ? (
+                            <img
+                                src={node.iconUrl}
+                                alt=""
+                                width={20}
+                                height={20}
+                                loading="lazy"
+                                decoding="async"
+                                className="w-5 h-5 object-contain"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                            />
+                        ) : (
+                            <Icon
+                                icon="lucide:bookmark"
+                                className="w-5 h-5"
+                                style={{ color: node.color || '#6366f1' }}
+                                aria-hidden="true"
+                            />
+                        )}
                     </div>
 
-                    {/* Title and Count */}
+                    {/* Title and Info */}
                     <div className="flex-1 min-w-0">
                         {isRenaming ? (
                             <input
@@ -136,8 +172,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                     {node.title}
                                 </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500">
-                                    {childCount} {t('content.items')}
+                                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                                    {isFolder ? `${childCount} ${t('content.items')}` : extractDomain(node.url || '')}
                                 </p>
                             </>
                         )}
@@ -154,8 +190,129 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
         );
     }
 
-    // Bookmark card in grid view - large thumbnail style
-    if (viewMode === 'grid') {
+    // Card view - folder with preview grid
+    if (viewMode === 'card' && isFolder) {
+        const { cols, rows } = getPreviewGrid();
+        const maxItems = cols * rows;
+        const previewItems = childNodes.slice(0, maxItems);
+
+        return (
+            <Card
+                isPressable={!isRenaming}
+                isHoverable={!isRenaming}
+                isBlurred
+                {...(!isRenaming
+                    ? {
+                        onPress: (e: PressEvent) => onSelect({
+                            shiftKey: e.shiftKey,
+                            metaKey: e.metaKey,
+                            ctrlKey: e.ctrlKey,
+                        }),
+                    }
+                    : {})}
+                onDoubleClick={onDoubleClick}
+                className={cn(
+                    'overflow-hidden transition-all border border-gray-200/50 dark:border-white/5',
+                    'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
+                    isSelected && 'ring-2 ring-primary-500 bg-primary-50/80 dark:bg-primary-900/30'
+                )}
+            >
+                {/* Folder preview grid or empty state */}
+                <div className="aspect-square w-full bg-gray-50 dark:bg-gray-800/50 p-2">
+                    {previewItems.length > 0 ? (
+                        <div
+                            className="w-full h-full grid gap-1"
+                            style={{
+                                gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                                gridTemplateRows: `repeat(${rows}, 1fr)`,
+                            }}
+                        >
+                            {previewItems.map((item) => (
+                                <div
+                                    key={item.id}
+                                    className="rounded-md overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center"
+                                >
+                                    {item.type === 'folder' ? (
+                                        <Icon
+                                            icon="lucide:folder"
+                                            className="w-4 h-4"
+                                            style={{ color: item.color || '#60a5fa' }}
+                                        />
+                                    ) : item.iconUrl ? (
+                                        <img
+                                            src={item.iconUrl}
+                                            alt=""
+                                            className="w-4 h-4 object-contain"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = 'none';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div
+                                            className="w-4 h-4 rounded-sm"
+                                            style={{ backgroundColor: item.color || '#6366f1' }}
+                                        />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <Icon
+                                icon="lucide:folder"
+                                className="w-12 h-12"
+                                style={{ color: folderColor }}
+                                aria-hidden="true"
+                            />
+                        </div>
+                    )}
+                </div>
+
+                <CardBody className="p-3">
+                    {isRenaming ? (
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={handleRenameKeyDown}
+                            onBlur={() => {
+                                if (ignoreBlurRef.current) {
+                                    ignoreBlurRef.current = false;
+                                    return;
+                                }
+                                onRenameSubmit(renameValue);
+                            }}
+                            className="w-full text-sm font-medium bg-transparent border-none text-gray-900 dark:text-white outline-none"
+                            onClick={(e) => e.stopPropagation()}
+                            onDoubleClick={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {node.title}
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                                {childCount} {t('content.items')}
+                            </p>
+                        </>
+                    )}
+                </CardBody>
+
+                {/* Selected indicator */}
+                {isSelected && (
+                    <div className="absolute top-2 left-2">
+                        <div className="w-5 h-5 rounded-md bg-primary-500 flex items-center justify-center shadow-lg">
+                            <Icon icon="lucide:check" className="w-3 h-3 text-white" aria-hidden="true" />
+                        </div>
+                    </div>
+                )}
+            </Card>
+        );
+    }
+
+    // Card view - bookmark with thumbnail
+    if (viewMode === 'card') {
         return (
             <Card
                 isPressable={!isRenaming}
@@ -315,16 +472,23 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     }
 
     return (
-        <button
-            type="button"
+        <div
+            role="button"
+            tabIndex={0}
             onClick={(e) => onSelect({
                 shiftKey: e.shiftKey,
                 metaKey: e.metaKey,
                 ctrlKey: e.ctrlKey,
             })}
             onDoubleClick={onDoubleClick}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect({ shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey });
+                }
+            }}
             className={cn(
-                'group flex items-center p-2 h-12 rounded-lg transition-all cursor-pointer',
+                'group flex items-center p-2 h-12 rounded-lg transition-all cursor-pointer w-full text-left',
                 isSelected
                     ? 'bg-primary-50 dark:bg-primary-900/20 ring-1 ring-primary-500'
                     : 'hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -387,6 +551,6 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     <Icon icon="lucide:check" className="w-4 h-4 text-primary-500" aria-hidden="true" />
                 )}
             </div>
-        </button>
+        </div>
     );
 };

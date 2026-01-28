@@ -45,8 +45,11 @@ function getDefaultData(): StorageData {
         settings: {
             theme: 'system',
             locale: 'zh',
-            viewMode: 'grid',
+            viewMode: 'card',
             sidebarOpen: true,
+            autoExpandTree: false,
+            cardFolderPreviewSize: '2x2',
+            customColors: [],
         },
     };
 }
@@ -62,6 +65,18 @@ export function loadFromStorage(): StorageData {
         }
 
         const data = JSON.parse(raw) as StorageData;
+        const defaults = getDefaultData();
+
+        // 兼容旧版本缺失字段
+        data.settings = {
+            ...defaults.settings,
+            ...(data.settings ?? {}),
+        };
+
+        // 视图模式迁移：'grid' -> 'card'
+        if ((data.settings as { viewMode?: unknown }).viewMode === 'grid') {
+            data.settings.viewMode = 'card';
+        }
 
         // 版本迁移（预留）
         if (data.version !== CURRENT_VERSION) {

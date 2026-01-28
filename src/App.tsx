@@ -18,7 +18,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
 // Core
-import type { Node, ExportScope, Locale } from './core/types';
+import type { Node, ExportScope, Locale, CardFolderPreviewSize } from './core/types';
 import {
     useNodes,
     useNodeActions,
@@ -43,6 +43,7 @@ import { Toolbar } from './components/Toolbar';
 import { ContentArea } from './components/ContentArea';
 import { Inspector } from './components/Inspector';
 import { SelectionToolbar } from './components/SelectionToolbar';
+import { SettingsModal } from './components/SettingsModal';
 
 // i18n
 import { changeLanguage } from './i18n';
@@ -85,6 +86,11 @@ export function App() {
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
     const [renamingId, setRenamingId] = useState<string | null>(null);
     const [activeDragId, setActiveDragId] = useState<string | null>(null);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [autoExpandTree, setAutoExpandTree] = useState(false);
+    const [cardFolderPreviewSize, setCardFolderPreviewSize] = useState<CardFolderPreviewSize>('2x2');
+    const [customColors, setCustomColors] = useState<string[]>([]);
+    const [currentView, setCurrentView] = useState<'bookmarks' | 'favorites' | 'readLater' | 'trash'>('bookmarks');
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // 面包屑
@@ -136,7 +142,7 @@ export function App() {
     const handleDoubleClick = useCallback((node: Node) => {
         if (node.type === 'folder') {
             handleNavigate(node.id);
-        } else if (node.url) {
+        } else if (node.url && node.url.startsWith('http')) {
             window.open(node.url, '_blank');
         }
     }, [handleNavigate]);
@@ -159,7 +165,7 @@ export function App() {
             type: 'bookmark',
             parentId: currentFolderId,
             title: t('toolbar.newBookmark'),
-            url: 'https://',
+            url: '',
         });
         selection.selectOne(newNode.id);
         setInspectorOpen(true);
@@ -326,6 +332,40 @@ export function App() {
         });
     }, []);
 
+    // 添加自定义颜色
+    const handleAddCustomColor = useCallback((color: string) => {
+        setCustomColors(prev => {
+            if (prev.includes(color)) return prev;
+            // 最多保留12个自定义颜色
+            const newColors = [color, ...prev].slice(0, 12);
+            return newColors;
+        });
+    }, []);
+
+    // 导航到收藏夹
+    const handleNavigateToFavorites = useCallback(() => {
+        setCurrentView('favorites');
+        selection.clearSelection();
+    }, [selection]);
+
+    // 导航到稍后阅读
+    const handleNavigateToReadLater = useCallback(() => {
+        setCurrentView('readLater');
+        selection.clearSelection();
+    }, [selection]);
+
+    // 导航到回收站
+    const handleNavigateToTrash = useCallback(() => {
+        setCurrentView('trash');
+        selection.clearSelection();
+    }, [selection]);
+
+    // 导航到文件夹时重置视图
+    const handleFolderClick = useCallback((folderId: string) => {
+        setCurrentView('bookmarks');
+        handleNavigate(folderId);
+    }, [handleNavigate]);
+
     // 选择处理
     const handleSelect = useCallback((id: string, keys: ModifierKeys) => {
         if (viewMode === 'list' && keys.shiftKey) {
@@ -411,9 +451,14 @@ export function App() {
                         rootId="root"
                         currentFolderId={currentFolderId}
                         expandedFolders={expandedFolders}
-                        onFolderClick={handleNavigate}
+                        onFolderClick={handleFolderClick}
                         onToggleExpand={handleToggleExpand}
                         onNewFolder={handleNewFolder}
+                        onOpenSettings={() => setSettingsOpen(true)}
+                        onNavigateToFavorites={handleNavigateToFavorites}
+                        onNavigateToReadLater={handleNavigateToReadLater}
+                        onNavigateToTrash={handleNavigateToTrash}
+                        currentView={currentView}
                     />
                 )}
 
@@ -435,11 +480,13 @@ export function App() {
                     {/* 内容列表 */}
                     <ContentArea
                         nodes={visibleNodes}
+                        allNodes={nodes}
                         folderId={currentFolderId}
                         viewMode={viewMode}
                         selectedIds={selection.selectedIds}
                         renamingId={renamingId}
                         searchQuery={searchQuery}
+                        cardFolderPreviewSize={cardFolderPreviewSize}
                         onSelect={handleSelect}
                         onDoubleClick={handleDoubleClick}
                         onClearSelection={selection.clearSelection}
@@ -453,8 +500,10 @@ export function App() {
                     <Inspector
                         nodes={nodes}
                         selectedIds={selection.selectedIds}
+                        customColors={customColors}
                         onUpdate={handleUpdateNode}
                         onClose={() => setInspectorOpen(false)}
+                        onAddCustomColor={handleAddCustomColor}
                     />
                 )}
                 </div>
@@ -478,6 +527,20 @@ export function App() {
                     onClear={selection.clearSelection}
                 />
             </DndContext>
+
+            {/* Settings Modal */}
+            <SettingsModal
+                isOpen={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                theme={theme}
+                onThemeChange={setTheme}
+                locale={locale}
+                onLocaleChange={handleLocaleChange}
+                autoExpandTree={autoExpandTree}
+                onAutoExpandTreeChange={setAutoExpandTree}
+                cardFolderPreviewSize={cardFolderPreviewSize}
+                onCardFolderPreviewSizeChange={setCardFolderPreviewSize}
+            />
         </div>
     );
 }

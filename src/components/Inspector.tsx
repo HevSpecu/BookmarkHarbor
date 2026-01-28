@@ -26,18 +26,24 @@ const PRESET_COLORS = [
 interface InspectorProps {
     nodes: Record<string, Node>;
     selectedIds: Set<string>;
+    customColors: string[];
     onUpdate: (id: string, updates: UpdateNodeRequest) => void;
     onClose: () => void;
+    onAddCustomColor: (color: string) => void;
 }
 
 export const Inspector: React.FC<InspectorProps> = ({
     nodes,
     selectedIds,
+    customColors,
     onUpdate,
     onClose,
+    onAddCustomColor,
 }) => {
     const { t } = useTranslation();
     const [isFetching, setIsFetching] = useState(false);
+    const [customColorInput, setCustomColorInput] = useState('#6366f1');
+    const colorInputRef = React.useRef<HTMLInputElement>(null);
     const [coverInputValue, setCoverInputValue] = useState('');
     const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
     const [coverUrlError, setCoverUrlError] = useState<string | null>(null);
@@ -242,7 +248,7 @@ export const Inspector: React.FC<InspectorProps> = ({
                 </div>
 
                 {/* 基本信息 */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {/* 名称 */}
                     <Input
                         label={t('inspector.name')}
@@ -293,6 +299,45 @@ export const Inspector: React.FC<InspectorProps> = ({
                                 />
                             </Tooltip>
                         ))}
+                        {/* 自定义颜色历史 */}
+                        {customColors.map((color) => (
+                            <Tooltip key={color} content={color}>
+                                <button
+                                    type="button"
+                                    className={cn(
+                                        'w-8 h-8 rounded-full border-2 transition-transform hover:scale-110',
+                                        item.color === color
+                                            ? 'border-gray-900 dark:border-white scale-110'
+                                            : 'border-transparent'
+                                    )}
+                                    style={{ backgroundColor: color }}
+                                    onClick={() => onUpdate(item.id, { color })}
+                                />
+                            </Tooltip>
+                        ))}
+                        {/* 自定义颜色选择器 */}
+                        <Tooltip content={t('inspector.customColor')}>
+                            <button
+                                type="button"
+                                className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors relative overflow-hidden"
+                                onClick={() => colorInputRef.current?.click()}
+                            >
+                                <Icon icon="lucide:plus" className="w-4 h-4 text-gray-400" aria-hidden="true" />
+                                <input
+                                    ref={colorInputRef}
+                                    type="color"
+                                    value={customColorInput}
+                                    onChange={(e) => setCustomColorInput(e.target.value)}
+                                    onBlur={() => {
+                                        if (customColorInput && !PRESET_COLORS.includes(customColorInput) && !customColors.includes(customColorInput)) {
+                                            onAddCustomColor(customColorInput);
+                                        }
+                                        onUpdate(item.id, { color: customColorInput });
+                                    }}
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                />
+                            </button>
+                        </Tooltip>
                         {/* 清除颜色 */}
                         <Tooltip content="Remove color">
                             <button
