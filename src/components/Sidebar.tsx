@@ -16,6 +16,8 @@ interface SidebarItemProps {
     currentFolderId: string;
     expandedFolders: Set<string>;
     depth?: number;
+    isLast?: boolean;
+    parentLines?: boolean[];
     onFolderClick: (id: string) => void;
     onToggleExpand: (id: string) => void;
 }
@@ -26,6 +28,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
     currentFolderId,
     expandedFolders,
     depth = 0,
+    isLast = false,
+    parentLines = [],
     onFolderClick,
     onToggleExpand,
 }) => {
@@ -45,19 +49,45 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
     const hasChildren = children.length > 0;
 
     return (
-        <div>
+        <div className="relative">
+            {/* Tree lines */}
+            {depth > 0 && (
+                <>
+                    {/* Vertical lines from parent levels */}
+                    {parentLines.map((showLine, index) => showLine && (
+                        <div
+                            key={index}
+                            className="absolute top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700"
+                            style={{ left: `${index * 16 + 18}px` }}
+                        />
+                    ))}
+                    {/* Horizontal line to current item */}
+                    <div
+                        className="absolute w-3 h-px bg-gray-200 dark:bg-gray-700"
+                        style={{ left: `${(depth - 1) * 16 + 18}px`, top: '18px' }}
+                    />
+                    {/* Vertical line segment for current level */}
+                    <div
+                        className={cn(
+                            "absolute w-px bg-gray-200 dark:bg-gray-700",
+                            isLast ? "top-0 h-[18px]" : "top-0 bottom-0"
+                        )}
+                        style={{ left: `${(depth - 1) * 16 + 18}px` }}
+                    />
+                </>
+            )}
             <div
                 ref={setNodeRef}
                 className={cn(
-                    'group flex items-center py-2 px-3 cursor-pointer select-none rounded-xl text-sm transition-all duration-150',
+                    'group flex items-center py-2 px-3 cursor-pointer select-none rounded-xl text-sm transition-all duration-150 relative',
                     isActive
                         ? 'bg-primary-500 text-white font-medium'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5',
                     isOver && 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/30'
                 )}
-                style={{ paddingLeft: `${depth * 16 + 12}px` }}
+                style={{ marginLeft: `${depth * 16}px` }}
             >
-                {hasChildren && (
+                {hasChildren ? (
                     <button
                         type="button"
                         className={cn(
@@ -76,6 +106,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
                             aria-hidden="true"
                         />
                     </button>
+                ) : (
+                    <span className="w-5 mr-1 flex-shrink-0" />
                 )}
 
                 <button
@@ -96,7 +128,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
                 </button>
             </div>
 
-            {isExpanded && children.map(child => (
+            {isExpanded && children.map((child, index) => (
                 <SidebarItem
                     key={child.id}
                     node={child}
@@ -104,6 +136,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
                     currentFolderId={currentFolderId}
                     expandedFolders={expandedFolders}
                     depth={depth + 1}
+                    isLast={index === children.length - 1}
+                    parentLines={[...parentLines, !isLast]}
                     onFolderClick={onFolderClick}
                     onToggleExpand={onToggleExpand}
                 />
