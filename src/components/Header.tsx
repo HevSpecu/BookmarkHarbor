@@ -17,6 +17,7 @@ import {
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import type { ViewMode, Theme, Locale } from '../core/types';
+import { cn } from '../core/utils';
 
 interface BreadcrumbItemData {
     id: string;
@@ -182,31 +183,43 @@ export const Header: React.FC<HeaderProps> = ({
                 <ButtonGroup size="sm">
                     <Button
                         isIconOnly
-                        variant={viewMode === 'list' ? 'solid' : 'light'}
-                        color={viewMode === 'list' ? 'primary' : 'default'}
+                        variant="light"
                         onPress={() => onViewModeChange('list')}
                         aria-label={t('aria.listView')}
-                        className={viewMode !== 'list' ? 'text-gray-600 dark:text-gray-400' : ''}
+                        className={cn(
+                            'transition-colors',
+                            viewMode === 'list'
+                                ? 'bg-[var(--color-primary)] text-white'
+                                : 'text-gray-600 dark:text-gray-400'
+                        )}
                     >
                         <Icon icon="lucide:list" className="h-4 w-4" aria-hidden="true" />
                     </Button>
                     <Button
                         isIconOnly
-                        variant={viewMode === 'card' ? 'solid' : 'light'}
-                        color={viewMode === 'card' ? 'primary' : 'default'}
+                        variant="light"
                         onPress={() => onViewModeChange('card')}
                         aria-label={t('aria.cardView')}
-                        className={viewMode !== 'card' ? 'text-gray-600 dark:text-gray-400' : ''}
+                        className={cn(
+                            'transition-colors',
+                            viewMode === 'card'
+                                ? 'bg-[var(--color-primary)] text-white'
+                                : 'text-gray-600 dark:text-gray-400'
+                        )}
                     >
                         <Icon icon="lucide:grid-2x2" className="h-4 w-4" aria-hidden="true" />
                     </Button>
                     <Button
                         isIconOnly
-                        variant={viewMode === 'tile' ? 'solid' : 'light'}
-                        color={viewMode === 'tile' ? 'primary' : 'default'}
+                        variant="light"
                         onPress={() => onViewModeChange('tile')}
                         aria-label={t('aria.tileView')}
-                        className={viewMode !== 'tile' ? 'text-gray-600 dark:text-gray-400' : ''}
+                        className={cn(
+                            'transition-colors',
+                            viewMode === 'tile'
+                                ? 'bg-[var(--color-primary)] text-white'
+                                : 'text-gray-600 dark:text-gray-400'
+                        )}
                     >
                         <Icon icon="lucide:layout-grid" className="h-4 w-4" aria-hidden="true" />
                     </Button>

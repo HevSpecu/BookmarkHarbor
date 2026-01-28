@@ -89,11 +89,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     {t('toolbar.newFolder')}
                 </Button>
                 <Button
-                    color="primary"
                     size="sm"
                     startContent={<Icon icon="lucide:plus" className="w-4 h-4" aria-hidden="true" />}
                     onPress={onNewBookmark}
-                    className="shadow-md shadow-primary/25 text-white"
+                    className="bg-[var(--color-primary)] text-white hover:opacity-90 shadow-[0_8px_24px_rgba(var(--color-primary-rgb),0.25)]"
                 >
                     {t('toolbar.newBookmark')}
                 </Button>
