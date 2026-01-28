@@ -5,14 +5,35 @@
     },
     "sidebar": {
         "title": "Folders",
-        "empty": "No folders yet"
+        "empty": "No folders yet",
+        "myBookmarks": "My Bookmarks",
+        "favorites": "Favorites",
+        "readingList": "Reading List",
+        "trash": "Trash",
+        "folders": "Folders",
+        "user": "Local User",
+        "localMode": "Local Mode"
     },
     "toolbar": {
         "newFolder": "New Folder",
         "newBookmark": "New Bookmark",
         "import": "Import",
         "export": "Export",
-        "delete": "Delete"
+        "delete": "Delete",
+        "selection": "Selection",
+        "selectAll": "Select All",
+        "clearSelection": "Clear Selection",
+        "invertSelection": "Invert Selection",
+        "undo": "Undo",
+        "redo": "Redo",
+        "sort": "Sort",
+        "sortBy": "Sort By",
+        "sortByName": "Name",
+        "sortByDate": "Modified Date",
+        "sortByType": "Type",
+        "order": "Order",
+        "ascending": "Ascending",
+        "descending": "Descending"
     },
     "viewMode": {
         "grid": "Grid View",
@@ -54,6 +75,11 @@
         "title": "No Content",
         "description": "Click the buttons above to create a folder or bookmark",
         "noBookmarks": "No bookmarks yet"
+    },
+    "content": {
+        "subfolders": "Subfolders",
+        "bookmarks": "Bookmarks",
+        "items": "items"
     },
     "contextMenu": {
         "open": "Open",
@@ -99,6 +125,12 @@
         "fetchTimeout": "Request timeout",
         "invalidUrl": "Invalid URL",
         "storageFull": "Storage is full"
+    },
+    "selection": {
+        "selected": "Selected",
+        "move": "Move",
+        "export": "Export",
+        "delete": "Delete"
     },
     "toast": {
         "copied": "Copied to clipboard",

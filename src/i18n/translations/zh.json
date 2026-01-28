@@ -5,14 +5,35 @@
     },
     "sidebar": {
         "title": "文件夹",
-        "empty": "暂无文件夹"
+        "empty": "暂无文件夹",
+        "myBookmarks": "我的书签",
+        "favorites": "收藏夹",
+        "readingList": "稀后阅读",
+        "trash": "回收站",
+        "folders": "文件夹",
+        "user": "本地用户",
+        "localMode": "本地模式"
     },
     "toolbar": {
         "newFolder": "新建文件夹",
         "newBookmark": "新建书签",
         "import": "导入",
         "export": "导出",
-        "delete": "删除"
+        "delete": "删除",
+        "selection": "选择",
+        "selectAll": "全选",
+        "clearSelection": "取消选择",
+        "invertSelection": "反向选择",
+        "undo": "撤销",
+        "redo": "重做",
+        "sort": "排序",
+        "sortBy": "排序方式",
+        "sortByName": "名称",
+        "sortByDate": "修改日期",
+        "sortByType": "类型",
+        "order": "顺序",
+        "ascending": "递增",
+        "descending": "递减"
     },
     "viewMode": {
         "grid": "网格视图",
@@ -54,6 +75,11 @@
         "title": "暂无内容",
         "description": "点击上方按钮创建文件夹或书签",
         "noBookmarks": "暂无书签"
+    },
+    "content": {
+        "subfolders": "子文件夹",
+        "bookmarks": "书签",
+        "items": "个项目"
     },
     "contextMenu": {
         "open": "打开",
@@ -99,6 +125,12 @@
         "fetchTimeout": "请求超时",
         "invalidUrl": "无效的网址",
         "storageFull": "存储空间已满"
+    },
+    "selection": {
+        "selected": "已选择",
+        "move": "移动",
+        "export": "导出",
+        "delete": "删除"
     },
     "toast": {
         "copied": "已复制到剪贴板",
