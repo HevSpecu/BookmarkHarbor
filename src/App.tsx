@@ -412,6 +412,7 @@ export function App() {
                         expandedFolders={expandedFolders}
                         onFolderClick={handleNavigate}
                         onToggleExpand={handleToggleExpand}
+                        onNewFolder={handleNewFolder}
                     />
                 )}
 

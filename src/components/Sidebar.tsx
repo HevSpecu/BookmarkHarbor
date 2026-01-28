@@ -1,9 +1,9 @@
 /**
- * Sidebar 组件 - 左侧文件夹树（使用 HeroUI）
+ * Sidebar 组件 - 左侧导航栏（复刻参考设计）
  */
 
 import React from 'react';
-import { ScrollShadow } from '@heroui/react';
+import { ScrollShadow, Button, Avatar } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import { useDroppable } from '@dnd-kit/core';
@@ -38,7 +38,6 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
         id: `sidebar-folder:${node.id}`,
     });
 
-    // 获取子文件夹
     const children = Object.values(nodes)
         .filter(n => n.parentId === node.id && n.type === 'folder' && !n.deletedAt)
         .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
@@ -50,64 +49,53 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
             <div
                 ref={setNodeRef}
                 className={cn(
-                    'group flex items-center py-1.5 px-2 cursor-pointer select-none rounded-lg text-sm transition-all duration-150',
+                    'group flex items-center py-2 px-3 cursor-pointer select-none rounded-xl text-sm transition-all duration-150',
                     isActive
-                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-medium'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800',
+                        ? 'bg-primary-500 text-white font-medium'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5',
                     isOver && 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/30'
                 )}
-                style={{ paddingLeft: `${depth * 12 + 8}px` }}
+                style={{ paddingLeft: `${depth * 16 + 12}px` }}
             >
-                {/* 展开/收起按钮 */}
-                <button
-                    type="button"
-                    className="p-0.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 mr-1 flex-shrink-0"
-                    aria-label={isExpanded ? t('aria.collapse') : t('aria.expand')}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (hasChildren) onToggleExpand(node.id);
-                    }}
-                >
-                    {hasChildren ? (
+                {hasChildren && (
+                    <button
+                        type="button"
+                        className={cn(
+                            'p-0.5 rounded-md mr-1 flex-shrink-0 transition-colors',
+                            isActive ? 'hover:bg-white/20' : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                        )}
+                        aria-label={isExpanded ? t('aria.collapse') : t('aria.expand')}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleExpand(node.id);
+                        }}
+                    >
                         <Icon
                             icon={isExpanded ? 'lucide:chevron-down' : 'lucide:chevron-right'}
-                            className="w-3 h-3"
+                            className="w-3.5 h-3.5"
                             aria-hidden="true"
                         />
-                    ) : (
-                        <div className="w-3 h-3" />
-                    )}
-                </button>
+                    </button>
+                )}
 
                 <button
                     type="button"
-                    className="flex min-w-0 flex-1 items-center text-left rounded-md focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950"
+                    className="flex min-w-0 flex-1 items-center text-left"
                     onClick={() => onFolderClick(node.id)}
                 >
-                    {/* 文件夹图标 */}
                     <Icon
                         icon="lucide:folder"
                         className={cn(
-                            'w-4 h-4 mr-2 flex-shrink-0',
-                            node.color ? '' : (isActive ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500')
+                            'w-4 h-4 mr-2.5 flex-shrink-0',
+                            isActive ? 'text-white' : ''
                         )}
-                        style={{ color: node.color || undefined }}
+                        style={{ color: isActive ? undefined : (node.color || '#60a5fa') }}
                         aria-hidden="true"
                     />
-
-                    {/* 标题 */}
                     <span className="truncate">{node.title}</span>
-
-                    {/* 子项数量 */}
-                    {hasChildren && (
-                        <span className="ml-auto text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {children.length}
-                        </span>
-                    )}
                 </button>
             </div>
 
-            {/* 子项 */}
             {isExpanded && children.map(child => (
                 <SidebarItem
                     key={child.id}
@@ -124,6 +112,35 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
     );
 };
 
+interface NavItemProps {
+    icon: string;
+    label: string;
+    isActive?: boolean;
+    onClick: () => void;
+    color?: string;
+}
+
+const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive, onClick, color }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+            'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-150',
+            isActive
+                ? 'bg-primary-500 text-white font-medium'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+        )}
+    >
+        <Icon
+            icon={icon}
+            className="w-5 h-5 flex-shrink-0"
+            style={{ color: isActive ? undefined : color }}
+            aria-hidden="true"
+        />
+        <span className="truncate">{label}</span>
+    </button>
+);
+
 interface SidebarProps {
     nodes: Record<string, Node>;
     rootId: string;
@@ -131,6 +148,7 @@ interface SidebarProps {
     expandedFolders: Set<string>;
     onFolderClick: (id: string) => void;
     onToggleExpand: (id: string) => void;
+    onNewFolder?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -140,11 +158,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     expandedFolders,
     onFolderClick,
     onToggleExpand,
+    onNewFolder,
 }) => {
     const { t } = useTranslation();
     const rootNode = nodes[rootId];
 
-    // 获取根节点的子文件夹
     const rootChildren = rootNode
         ? Object.values(nodes)
             .filter(n => n.parentId === rootId && n.type === 'folder' && !n.deletedAt)
@@ -152,37 +170,115 @@ export const Sidebar: React.FC<SidebarProps> = ({
         : [];
 
     return (
-        <div className="w-64 flex flex-col h-full border-r border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-gray-950/50">
-            {/* 标题 */}
-            <div className="h-12 flex items-center px-4 border-b border-gray-100 dark:border-white/5">
-                <Icon icon="lucide:folder-tree" className="w-4 h-4 mr-2 text-gray-400" aria-hidden="true" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                    {t('sidebar.title')}
+        <aside className="w-60 flex flex-col h-full bg-gray-50/80 dark:bg-gray-900/50 backdrop-blur-xl border-r border-gray-200/50 dark:border-white/5">
+            {/* Logo */}
+            <div className="h-14 flex items-center px-4 flex-shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center mr-2.5">
+                    <Icon icon="lucide:bookmark" className="w-4 h-4 text-white" aria-hidden="true" />
+                </div>
+                <span className="text-base font-semibold text-gray-900 dark:text-white">
+                    {t('app.title')}
                 </span>
             </div>
 
-            {/* 树形列表 */}
-            <ScrollShadow className="flex-1 p-3">
-                {rootChildren.length === 0 ? (
-                    <div className="text-center text-gray-400 text-sm py-8">
-                        {t('sidebar.empty')}
+            <ScrollShadow className="flex-1 overflow-y-auto px-3 py-2">
+                {/* MY BOOKMARKS Section */}
+                <div className="mb-4">
+                    <p className="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                        {t('sidebar.myBookmarks')}
+                    </p>
+                    <div className="flex flex-col gap-0.5 mt-1">
+                        <NavItem
+                            icon="lucide:bookmark"
+                            label={t('app.allBookmarks')}
+                            isActive={currentFolderId === 'root'}
+                            onClick={() => onFolderClick('root')}
+                            color="#3b82f6"
+                        />
+                        <NavItem
+                            icon="lucide:star"
+                            label={t('sidebar.favorites')}
+                            isActive={false}
+                            onClick={() => {}}
+                            color="#eab308"
+                        />
+                        <NavItem
+                            icon="lucide:clock"
+                            label={t('sidebar.readingList')}
+                            isActive={false}
+                            onClick={() => {}}
+                            color="#22c55e"
+                        />
+                        <NavItem
+                            icon="lucide:trash-2"
+                            label={t('sidebar.trash')}
+                            isActive={false}
+                            onClick={() => {}}
+                            color="#6b7280"
+                        />
                     </div>
-                ) : (
-                    <div className="flex flex-col gap-0.5">
-                        {rootChildren.map(child => (
-                            <SidebarItem
-                                key={child.id}
-                                node={child}
-                                nodes={nodes}
-                                currentFolderId={currentFolderId}
-                                expandedFolders={expandedFolders}
-                                onFolderClick={onFolderClick}
-                                onToggleExpand={onToggleExpand}
-                            />
-                        ))}
+                </div>
+
+                {/* FOLDERS Section */}
+                <div>
+                    <div className="flex items-center justify-between px-3 py-1.5">
+                        <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                            {t('sidebar.folders')}
+                        </p>
+                        {onNewFolder && (
+                            <Button
+                                isIconOnly
+                                size="sm"
+                                variant="light"
+                                className="w-5 h-5 min-w-0"
+                                onPress={onNewFolder}
+                                aria-label={t('toolbar.newFolder')}
+                            >
+                                <Icon icon="lucide:plus" className="w-3.5 h-3.5 text-gray-400" aria-hidden="true" />
+                            </Button>
+                        )}
                     </div>
-                )}
+
+                    {rootChildren.length === 0 ? (
+                        <div className="text-center text-gray-400 text-xs py-6">
+                            {t('sidebar.empty')}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-0.5 mt-1">
+                            {rootChildren.map(child => (
+                                <SidebarItem
+                                    key={child.id}
+                                    node={child}
+                                    nodes={nodes}
+                                    currentFolderId={currentFolderId}
+                                    expandedFolders={expandedFolders}
+                                    onFolderClick={onFolderClick}
+                                    onToggleExpand={onToggleExpand}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </ScrollShadow>
-        </div>
+
+            {/* User Profile */}
+            <div className="flex-shrink-0 p-3 border-t border-gray-200/50 dark:border-white/5">
+                <div className="flex items-center gap-3 px-2 py-1.5">
+                    <Avatar
+                        size="sm"
+                        name="U"
+                        className="bg-primary-500 text-white text-xs"
+                    />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {t('sidebar.user')}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                            {t('sidebar.localMode')}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </aside>
     );
 };

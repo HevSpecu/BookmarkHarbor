@@ -1,10 +1,11 @@
 /**
- * BookmarkItem 组件 - 书签/文件夹卡片（使用 HeroUI）
+ * BookmarkItem 组件 - 书签/文件夹卡片（复刻参考设计）
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardFooter, type PressEvent } from '@heroui/react';
+import { Card, CardBody, CardFooter, type PressEvent } from '@heroui/react';
 import { Icon } from '@iconify/react';
+import { useTranslation } from 'react-i18next';
 import type { Node } from '../core/types';
 import { cn, formatDate, extractDomain } from '../core/utils';
 import { createRenameKeyHandler } from '../core/hooks/useKeyboard';
@@ -24,7 +25,16 @@ interface BookmarkItemProps {
     onDoubleClick: () => void;
     onRenameSubmit: (newTitle: string) => void;
     onRenameCancel: () => void;
+    childCount?: number;
 }
+
+const FOLDER_COLORS = ['#f97316', '#a855f7', '#22c55e', '#3b82f6', '#ec4899', '#14b8a6'];
+
+const getFolderColor = (id: string, customColor?: string): string => {
+    if (customColor) return customColor;
+    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return FOLDER_COLORS[hash % FOLDER_COLORS.length];
+};
 
 export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     node,
@@ -35,12 +45,13 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     onDoubleClick,
     onRenameSubmit,
     onRenameCancel,
+    childCount = 0,
 }) => {
+    const { t } = useTranslation();
     const [renameValue, setRenameValue] = useState(node.title);
     const inputRef = useRef<HTMLInputElement>(null);
     const ignoreBlurRef = useRef(false);
 
-    // 重命名模式下聚焦输入框
     useEffect(() => {
         if (isRenaming && inputRef.current) {
             setRenameValue(node.title);
@@ -61,13 +72,15 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     });
 
     const isFolder = node.type === 'folder';
+    const folderColor = getFolderColor(node.id, node.color);
 
-    // 网格视图
-    if (viewMode === 'grid') {
+    // Folder card in grid view - horizontal style matching reference
+    if (viewMode === 'grid' && isFolder) {
         return (
             <Card
                 isPressable={!isRenaming}
                 isHoverable={!isRenaming}
+                isBlurred
                 {...(!isRenaming
                     ? {
                         onPress: (e: PressEvent) => onSelect({
@@ -79,99 +92,152 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     : {})}
                 onDoubleClick={onDoubleClick}
                 className={cn(
-                    'aspect-[4/3] overflow-hidden transition-all',
-                    isSelected && 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                    'h-16 transition-all border border-gray-200/50 dark:border-white/5',
+                    'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
+                    isSelected && 'ring-2 ring-primary-500 bg-primary-50/80 dark:bg-primary-900/30'
                 )}
             >
-                {/* 封面区域 */}
-                <div
-                    className={cn(
-                        'flex-1 w-full h-[calc(100%-2.5rem)] bg-cover bg-center bg-no-repeat relative',
-                        isFolder ? 'flex items-center justify-center' : ''
-                    )}
-                    style={{
-                        backgroundColor: isFolder ? 'transparent' : (node.color || '#e2e8f0'),
-                        backgroundImage: node.coverUrl ? `url(${node.coverUrl})` : 'none',
-                    }}
-                >
-                    {/* 文件夹图标 */}
-                    {isFolder && !node.coverUrl && (
+                <CardBody className="flex flex-row items-center gap-3 p-3">
+                    {/* Folder Icon */}
+                    <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `${folderColor}20` }}
+                    >
                         <Icon
                             icon="lucide:folder"
-                            className="w-16 h-16"
-                            style={{ color: node.color || '#93c5fd' }}
+                            className="w-5 h-5"
+                            style={{ color: folderColor }}
                             aria-hidden="true"
                         />
-                    )}
+                    </div>
 
-                    {/* 书签首字母（无封面时） */}
-                    {!isFolder && !node.coverUrl && (
-                        <div className="absolute inset-0 flex items-center justify-center text-white/50 text-4xl font-bold uppercase">
-                            {node.title.charAt(0)}
+                    {/* Title and Count */}
+                    <div className="flex-1 min-w-0">
+                        {isRenaming ? (
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                onKeyDown={handleRenameKeyDown}
+                                onBlur={() => {
+                                    if (ignoreBlurRef.current) {
+                                        ignoreBlurRef.current = false;
+                                        return;
+                                    }
+                                    onRenameSubmit(renameValue);
+                                }}
+                                className="w-full text-sm font-medium bg-transparent border-none text-gray-900 dark:text-white outline-none"
+                                onClick={(e) => e.stopPropagation()}
+                                onDoubleClick={(e) => e.stopPropagation()}
+                            />
+                        ) : (
+                            <>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                    {node.title}
+                                </p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500">
+                                    {childCount} {t('content.items')}
+                                </p>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Selected indicator */}
+                    {isSelected && (
+                        <div className="w-5 h-5 rounded-md bg-primary-500 flex items-center justify-center flex-shrink-0">
+                            <Icon icon="lucide:check" className="w-3 h-3 text-white" aria-hidden="true" />
                         </div>
                     )}
+                </CardBody>
+            </Card>
+        );
+    }
 
-                    {/* 选中指示器 */}
+    // Bookmark card in grid view - large thumbnail style
+    if (viewMode === 'grid') {
+        return (
+            <Card
+                isPressable={!isRenaming}
+                isHoverable={!isRenaming}
+                isBlurred
+                {...(!isRenaming
+                    ? {
+                        onPress: (e: PressEvent) => onSelect({
+                            shiftKey: e.shiftKey,
+                            metaKey: e.metaKey,
+                            ctrlKey: e.ctrlKey,
+                        }),
+                    }
+                    : {})}
+                onDoubleClick={onDoubleClick}
+                className={cn(
+                    'overflow-hidden transition-all border border-gray-200/50 dark:border-white/5',
+                    isSelected && 'ring-2 ring-primary-500'
+                )}
+            >
+                {/* Thumbnail area */}
+                <div
+                    className="aspect-[16/10] w-full bg-cover bg-center bg-no-repeat relative"
+                    style={{
+                        background: node.coverUrl
+                            ? `url(${node.coverUrl}) center/cover`
+                            : `linear-gradient(135deg, ${node.color || '#6366f1'}, ${node.color ? node.color + '88' : '#8b5cf6'})`,
+                    }}
+                >
+                    {/* Selection checkbox */}
                     {isSelected && (
-                        <div className="absolute top-2 right-2">
-                            <div className="w-5 h-5 rounded-full bg-primary-500 flex items-center justify-center">
+                        <div className="absolute top-2 left-2">
+                            <div className="w-5 h-5 rounded-md bg-primary-500 flex items-center justify-center shadow-lg">
                                 <Icon icon="lucide:check" className="w-3 h-3 text-white" aria-hidden="true" />
                             </div>
                         </div>
                     )}
 
-                    {/* Favicon 图标 */}
-                    {!isFolder && node.iconUrl && (
-                        <div className="absolute bottom-2 left-2 w-6 h-6 rounded bg-white/90 dark:bg-gray-800/90 p-0.5 shadow">
-                            <img
-                                src={node.iconUrl}
-                                alt=""
-                                width={24}
-                                height={24}
-                                loading="lazy"
-                                decoding="async"
-                                className="w-full h-full object-contain"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                            />
+                    {/* Gradient overlay for title visibility */}
+                    <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
+
+                    {/* Title overlay on image */}
+                    <div className="absolute inset-x-0 bottom-0 p-3">
+                        <div className="flex items-center gap-2">
+                            {node.iconUrl ? (
+                                <img
+                                    src={node.iconUrl}
+                                    alt=""
+                                    width={16}
+                                    height={16}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="w-4 h-4 rounded-sm object-contain flex-shrink-0"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                />
+                            ) : (
+                                <div
+                                    className="w-4 h-4 rounded-sm flex-shrink-0"
+                                    style={{ backgroundColor: node.color || '#6366f1' }}
+                                />
+                            )}
+                            <span className="text-sm font-medium text-white truncate">
+                                {node.title}
+                            </span>
                         </div>
-                    )}
+                        <p className="text-xs text-white/70 truncate mt-0.5 pl-6">
+                            {extractDomain(node.url || '')}
+                        </p>
+                    </div>
                 </div>
 
-                {/* 标题栏 */}
-                <CardFooter className="h-10 px-3 border-t border-gray-100 dark:border-white/5 bg-white dark:bg-gray-800">
-                    <div className="mr-2 flex-shrink-0">
-                        {isFolder ? (
-                            <Icon icon="lucide:folder" className="w-4 h-4 text-primary-500" aria-hidden="true" />
-                        ) : (
-                            <Icon icon="lucide:bookmark" className="w-4 h-4 text-gray-400" aria-hidden="true" />
-                        )}
-                    </div>
-
-                    {isRenaming ? (
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            value={renameValue}
-                            onChange={(e) => setRenameValue(e.target.value)}
-                            onKeyDown={handleRenameKeyDown}
-                            onBlur={() => {
-                                if (ignoreBlurRef.current) {
-                                    ignoreBlurRef.current = false;
-                                    return;
-                                }
-                                onRenameSubmit(renameValue);
-                            }}
-                            className="flex-1 text-xs font-medium bg-transparent border-none dark:text-white"
-                            onClick={(e) => e.stopPropagation()}
-                            onDoubleClick={(e) => e.stopPropagation()}
-                        />
-                    ) : (
-                        <span className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
-                            {node.title}
-                        </span>
-                    )}
+                {/* More button */}
+                <CardFooter className="absolute top-2 right-2 p-0 min-h-0">
+                    <button
+                        type="button"
+                        className="w-6 h-6 rounded-md bg-black/20 backdrop-blur-sm flex items-center justify-center hover:bg-black/40 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <Icon icon="lucide:more-vertical" className="w-3.5 h-3.5 text-white" aria-hidden="true" />
+                    </button>
                 </CardFooter>
             </Card>
         );
