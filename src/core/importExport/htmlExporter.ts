@@ -6,6 +6,15 @@
 import type { Node } from '../types';
 import { escapeHtml } from '../utils';
 
+function escapeHtmlAttribute(text: string): string {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 /**
  * HTML 头部模板
  */
@@ -29,8 +38,12 @@ function generateNodeHtml(
     if (node.type === 'bookmark') {
         // 书签
         const title = escapeHtml(node.title);
-        const url = escapeHtml(node.url || '');
-        return `${indent}<DT><A HREF="${url}">${title}</A>\n`;
+        const url = escapeHtmlAttribute(node.url || '');
+        const addDate = node.createdAt ? ` ADD_DATE="${Math.floor(node.createdAt / 1000)}"` : '';
+        const lastModified = node.updatedAt ? ` LAST_MODIFIED="${Math.floor(node.updatedAt / 1000)}"` : '';
+        const tags = node.tags && node.tags.length > 0 ? ` TAGS="${escapeHtmlAttribute(node.tags.join(','))}"` : '';
+
+        return `${indent}<DT><A HREF="${url}"${addDate}${lastModified}${tags}>${title}</A>\n`;
     } else {
         // 文件夹
         const title = escapeHtml(node.title);
@@ -38,7 +51,9 @@ function generateNodeHtml(
             .filter(n => n.parentId === node.id && !n.deletedAt)
             .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
 
-        let html = `${indent}<DT><H3>${title}</H3>\n${indent}<DL><p>\n`;
+        const addDate = node.createdAt ? ` ADD_DATE="${Math.floor(node.createdAt / 1000)}"` : '';
+        const lastModified = node.updatedAt ? ` LAST_MODIFIED="${Math.floor(node.updatedAt / 1000)}"` : '';
+        let html = `${indent}<DT><H3${addDate}${lastModified}>${title}</H3>\n${indent}<DL><p>\n`;
 
         for (const child of children) {
             html += generateNodeHtml(child, nodes, indent + '    ');
