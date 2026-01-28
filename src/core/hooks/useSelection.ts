@@ -55,6 +55,11 @@ export interface UseSelectionReturn {
     clearSelection: () => void;
 
     /**
+     * 反向选择
+     */
+    invertSelection: () => void;
+
+    /**
      * 检查是否选中
      */
     isSelected: (id: string) => boolean;
@@ -132,6 +137,18 @@ export function useSelection({ visibleNodes }: UseSelectionOptions): UseSelectio
         setAnchorId(null);
     }, []);
 
+    // 反向选择
+    const invertSelection = useCallback(() => {
+        const allIds = new Set(visibleNodes.map(n => n.id));
+        const inverted = new Set<string>();
+        for (const id of allIds) {
+            if (!selectedIds.has(id)) {
+                inverted.add(id);
+            }
+        }
+        setSelectedIds(inverted);
+    }, [visibleNodes, selectedIds]);
+
     // 检查是否选中
     const isSelected = useCallback((id: string) => {
         return selectedIds.has(id);
@@ -152,6 +169,7 @@ export function useSelection({ visibleNodes }: UseSelectionOptions): UseSelectio
         selectRange,
         selectAll,
         clearSelection,
+        invertSelection,
         isSelected,
         getSelectedNodes,
         setSelectedIds,
