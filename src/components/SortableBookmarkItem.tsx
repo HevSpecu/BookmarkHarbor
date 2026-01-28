@@ -84,6 +84,7 @@ export function SortableBookmarkItem({
             ref={setNodeRef}
             style={style}
             className={cn('relative', isDragging && 'opacity-60')}
+            data-node-id={node.id}
             {...attributes}
             {...listeners}
         >

@@ -104,18 +104,136 @@ export function App() {
     // 应用主题色到 CSS 变量
     useEffect(() => {
         const root = document.documentElement;
-        root.style.setProperty('--color-primary', themeColor);
-        // 计算较浅和较深的变体
+        const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
         const hexToRgb = (hex: string) => {
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return result ? {
-                r: parseInt(result[1], 16),
-                g: parseInt(result[2], 16),
-                b: parseInt(result[3], 16)
-            } : { r: 59, g: 130, b: 246 };
+            return result
+                ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16),
+                }
+                : { r: 59, g: 130, b: 246 };
         };
-        const rgb = hexToRgb(themeColor);
-        root.style.setProperty('--color-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+
+        const rgbToHex = (r: number, g: number, b: number) => {
+            const toHex = (n: number) => clamp(Math.round(n), 0, 255).toString(16).padStart(2, '0');
+            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+        };
+
+        const rgbToHsl = (r: number, g: number, b: number) => {
+            const r1 = r / 255;
+            const g1 = g / 255;
+            const b1 = b / 255;
+            const max = Math.max(r1, g1, b1);
+            const min = Math.min(r1, g1, b1);
+            const delta = max - min;
+
+            let h = 0;
+            if (delta !== 0) {
+                if (max === r1) h = ((g1 - b1) / delta) % 6;
+                else if (max === g1) h = (b1 - r1) / delta + 2;
+                else h = (r1 - g1) / delta + 4;
+                h *= 60;
+                if (h < 0) h += 360;
+            }
+
+            const l = (max + min) / 2;
+            const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+
+            return {
+                h,
+                s: s * 100,
+                l: l * 100,
+            };
+        };
+
+        const hslToRgb = (h: number, s: number, l: number) => {
+            const s1 = clamp(s, 0, 100) / 100;
+            const l1 = clamp(l, 0, 100) / 100;
+            const c = (1 - Math.abs(2 * l1 - 1)) * s1;
+            const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+            const m = l1 - c / 2;
+
+            let r1 = 0;
+            let g1 = 0;
+            let b1 = 0;
+
+            if (h >= 0 && h < 60) {
+                r1 = c;
+                g1 = x;
+            } else if (h >= 60 && h < 120) {
+                r1 = x;
+                g1 = c;
+            } else if (h >= 120 && h < 180) {
+                g1 = c;
+                b1 = x;
+            } else if (h >= 180 && h < 240) {
+                g1 = x;
+                b1 = c;
+            } else if (h >= 240 && h < 300) {
+                r1 = x;
+                b1 = c;
+            } else {
+                r1 = c;
+                b1 = x;
+            }
+
+            return {
+                r: Math.round((r1 + m) * 255),
+                g: Math.round((g1 + m) * 255),
+                b: Math.round((b1 + m) * 255),
+            };
+        };
+
+        root.style.setProperty('--color-primary', themeColor);
+
+        const baseRgb = hexToRgb(themeColor);
+        const baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
+
+        const shadeOffsets: Record<number, number> = {
+            50: 45,
+            100: 35,
+            200: 25,
+            300: 15,
+            400: 7,
+            500: 0,
+            600: -7,
+            700: -15,
+            800: -25,
+            900: -35,
+            950: -45,
+        };
+
+        const primaryForeground = baseHsl.l >= 60 ? '0 0% 0%' : '0 0% 100%';
+        root.style.setProperty('--heroui-primary-foreground', primaryForeground);
+
+        for (const [shadeStr, offset] of Object.entries(shadeOffsets)) {
+            const shade = Number(shadeStr);
+            const l = clamp(baseHsl.l + offset, 0, 100);
+            const rgb = hslToRgb(baseHsl.h, baseHsl.s, l);
+
+            root.style.setProperty(`--color-primary-${shade}-rgb`, `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+            root.style.setProperty(
+                `--heroui-primary-${shade}`,
+                `${Math.round(baseHsl.h)} ${Math.round(baseHsl.s)}% ${Math.round(l)}%`
+            );
+
+            if (shade === 500) {
+                root.style.setProperty('--color-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+                root.style.setProperty('--heroui-primary', `${Math.round(baseHsl.h)} ${Math.round(baseHsl.s)}% ${Math.round(l)}%`);
+                root.style.setProperty('--heroui-focus', `${Math.round(baseHsl.h)} ${Math.round(baseHsl.s)}% ${Math.round(l)}%`);
+            }
+
+            if (shade === 600) {
+                root.style.setProperty('--color-primary-hover', rgbToHex(rgb.r, rgb.g, rgb.b));
+            }
+
+            if (shade === 50) {
+                root.style.setProperty('--color-primary-light', rgbToHex(rgb.r, rgb.g, rgb.b));
+            }
+        }
     }, [themeColor]);
 
     // 面包屑
@@ -586,6 +704,7 @@ export function App() {
                             allNodes={nodes}
                             folderId={currentFolderId}
                             viewMode={viewMode}
+                            isDragging={!!activeDragId}
                             selectedIds={selection.selectedIds}
                             renamingId={renamingId}
                             searchQuery={searchQuery}
@@ -599,16 +718,31 @@ export function App() {
                     </main>
 
                     {/* 属性面板 */}
-                    {inspectorOpen && (
-                        <Inspector
-                            nodes={nodes}
-                            selectedIds={selection.selectedIds}
-                            customColors={customColors}
-                            onUpdate={handleUpdateNode}
-                            onClose={() => setInspectorOpen(false)}
-                            onAddCustomColor={handleAddCustomColor}
-                        />
-                    )}
+                    <div
+                        className="h-full overflow-hidden transition-[width] duration-200 ease-out"
+                        style={{
+                            width: inspectorOpen && selection.selectedIds.size > 0
+                                ? 'var(--inspector-width)'
+                                : '0px',
+                        }}
+                    >
+                        <div
+                            className="h-full transition-opacity duration-200"
+                            style={{
+                                opacity: inspectorOpen && selection.selectedIds.size > 0 ? 1 : 0,
+                                pointerEvents: inspectorOpen && selection.selectedIds.size > 0 ? 'auto' : 'none',
+                            }}
+                        >
+                            <Inspector
+                                nodes={nodes}
+                                selectedIds={selection.selectedIds}
+                                customColors={customColors}
+                                onUpdate={handleUpdateNode}
+                                onClose={() => setInspectorOpen(false)}
+                                onAddCustomColor={handleAddCustomColor}
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <DragOverlay>

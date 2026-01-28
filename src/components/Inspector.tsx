@@ -135,7 +135,7 @@ export const Inspector: React.FC<InspectorProps> = ({
     const isMultiple = selectedIds.size > 1;
 
     return (
-        <div className="w-80 h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-white/10 flex flex-col shadow-xl z-20">
+        <div className="w-full h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-white/10 flex flex-col shadow-xl z-20">
             {/* 标题栏 */}
             <div className="h-14 flex items-center justify-between px-6 border-b border-gray-100 dark:border-white/5 flex-shrink-0">
                 <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
@@ -272,7 +272,7 @@ export const Inspector: React.FC<InspectorProps> = ({
                             onValueChange={(value) => onUpdate(item.id, { url: value })}
                             startContent={<Icon icon="lucide:link" className="w-4 h-4 text-gray-400" aria-hidden="true" />}
                             classNames={{
-                                input: 'text-blue-600 dark:text-blue-400 font-mono',
+                                input: 'text-primary-600 dark:text-primary-400 font-mono',
                             }}
                         />
                     )}

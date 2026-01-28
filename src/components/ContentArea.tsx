@@ -7,6 +7,7 @@ import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { LayoutGroup, motion } from 'framer-motion';
 import type { Node, ViewMode, CardFolderPreviewSize } from '../core/types';
 import { BookmarkItem } from './BookmarkItem';
 import { SortableBookmarkItem } from './SortableBookmarkItem';
@@ -23,6 +24,7 @@ interface ContentAreaProps {
     allNodes: Record<string, Node>;
     folderId: string;
     viewMode: ViewMode;
+    isDragging: boolean;
     selectedIds: Set<string>;
     renamingId: string | null;
     searchQuery: string;
@@ -39,6 +41,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     allNodes,
     folderId,
     viewMode,
+    isDragging,
     selectedIds,
     renamingId,
     searchQuery,
@@ -75,6 +78,9 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     const folders = useMemo(() => nodes.filter(n => n.type === 'folder'), [nodes]);
     const bookmarks = useMemo(() => nodes.filter(n => n.type === 'bookmark'), [nodes]);
     const renderedNodes = useMemo(() => [...folders, ...bookmarks], [folders, bookmarks]);
+
+    const enableLayoutAnimation = viewMode !== 'list' && !isDragging;
+    const layoutTransition = { layout: { duration: 0.18, ease: 'easeOut' } } as const;
 
     // Empty state
     if (nodes.length === 0) {
@@ -166,14 +172,33 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                 }}
             >
                 <SortableContext items={renderedNodes.map((n) => n.id)} strategy={sortingStrategy}>
-                    <div
-                        className={cn(getGridClass())}
-                        onPointerDown={(e) => {
-                            if (e.target === e.currentTarget) onClearSelection();
-                        }}
-                    >
-                        {renderedNodes.map((node) => renderNode(node, true))}
-                    </div>
+                    {enableLayoutAnimation ? (
+                        <LayoutGroup id={`content-search:${folderId}:${viewMode}`}>
+                            <motion.div
+                                layout
+                                transition={layoutTransition}
+                                className={cn(getGridClass())}
+                                onPointerDown={(e) => {
+                                    if (e.target === e.currentTarget) onClearSelection();
+                                }}
+                            >
+                                {renderedNodes.map((node) => (
+                                    <motion.div key={node.id} layout="position" transition={layoutTransition}>
+                                        {renderNode(node, true)}
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        </LayoutGroup>
+                    ) : (
+                        <div
+                            className={cn(getGridClass())}
+                            onPointerDown={(e) => {
+                                if (e.target === e.currentTarget) onClearSelection();
+                            }}
+                        >
+                            {renderedNodes.map((node) => renderNode(node, true))}
+                        </div>
+                    )}
                 </SortableContext>
             </div>
         );
@@ -188,28 +213,76 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
             }}
         >
             <SortableContext items={renderedNodes.map((n) => n.id)} strategy={sortingStrategy}>
-                <div
-                    className={cn(getGridClass())}
-                    onPointerDown={(e) => {
-                        if (e.target === e.currentTarget) onClearSelection();
-                    }}
-                >
-                    {/* SUBFOLDERS Section */}
-                    {folders.length > 0 && viewMode !== 'list' && (
-                        <h2 className="col-span-full text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-1">
-                            {t('content.subfolders')}
-                        </h2>
-                    )}
-                    {folders.map((node) => renderNode(node, false))}
+                {enableLayoutAnimation ? (
+                    <LayoutGroup id={`content:${folderId}:${viewMode}`}>
+                        <motion.div
+                            layout
+                            transition={layoutTransition}
+                            className={cn(getGridClass())}
+                            onPointerDown={(e) => {
+                                if (e.target === e.currentTarget) onClearSelection();
+                            }}
+                        >
+                            {/* SUBFOLDERS Section */}
+                            {folders.length > 0 && (
+                                <motion.h2
+                                    layout="position"
+                                    transition={layoutTransition}
+                                    className="col-span-full text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-1"
+                                >
+                                    {t('content.subfolders')}
+                                </motion.h2>
+                            )}
+                            {folders.map((node) => (
+                                <motion.div key={node.id} layout="position" transition={layoutTransition}>
+                                    {renderNode(node, false)}
+                                </motion.div>
+                            ))}
 
-                    {/* BOOKMARKS Section */}
-                    {bookmarks.length > 0 && viewMode !== 'list' && (
-                        <h2 className={cn('col-span-full text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-1', folders.length > 0 && 'mt-2')}>
-                            {t('content.bookmarks')}
-                        </h2>
-                    )}
-                    {bookmarks.map((node) => renderNode(node, false))}
-                </div>
+                            {/* BOOKMARKS Section */}
+                            {bookmarks.length > 0 && (
+                                <motion.h2
+                                    layout="position"
+                                    transition={layoutTransition}
+                                    className={cn(
+                                        'col-span-full text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-1',
+                                        folders.length > 0 && 'mt-2'
+                                    )}
+                                >
+                                    {t('content.bookmarks')}
+                                </motion.h2>
+                            )}
+                            {bookmarks.map((node) => (
+                                <motion.div key={node.id} layout="position" transition={layoutTransition}>
+                                    {renderNode(node, false)}
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    </LayoutGroup>
+                ) : (
+                    <div
+                        className={cn(getGridClass())}
+                        onPointerDown={(e) => {
+                            if (e.target === e.currentTarget) onClearSelection();
+                        }}
+                    >
+                        {/* SUBFOLDERS Section */}
+                        {folders.length > 0 && viewMode !== 'list' && (
+                            <h2 className="col-span-full text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-1">
+                                {t('content.subfolders')}
+                            </h2>
+                        )}
+                        {folders.map((node) => renderNode(node, false))}
+
+                        {/* BOOKMARKS Section */}
+                        {bookmarks.length > 0 && viewMode !== 'list' && (
+                            <h2 className={cn('col-span-full text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-1', folders.length > 0 && 'mt-2')}>
+                                {t('content.bookmarks')}
+                            </h2>
+                        )}
+                        {bookmarks.map((node) => renderNode(node, false))}
+                    </div>
+                )}
             </SortableContext>
         </div>
     );

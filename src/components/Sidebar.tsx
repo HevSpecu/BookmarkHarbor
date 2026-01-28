@@ -80,19 +80,24 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
                 ref={setNodeRef}
                 className={cn(
                     'group flex items-center py-2 px-3 cursor-pointer select-none rounded-xl text-sm transition-all duration-150 relative',
-                    isActive
-                        ? 'bg-primary-500 text-white font-medium'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5',
-                    isOver && 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/30'
+                    'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5',
+                    isOver && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-50-rgb))] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.3)]'
                 )}
                 style={{ marginLeft: `${depth * 16}px` }}
             >
+                {isActive && (
+                    <div
+                        className="absolute inset-0 rounded-xl"
+                        style={{ backgroundColor: 'rgb(var(--color-primary-500-rgb))', opacity: 0.18 }}
+                        aria-hidden="true"
+                    />
+                )}
                 {hasChildren ? (
                     <button
                         type="button"
                         className={cn(
                             'p-0.5 rounded-md mr-1 flex-shrink-0 transition-colors',
-                            isActive ? 'hover:bg-white/20' : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                            isActive ? 'hover:bg-black/5 dark:hover:bg-white/10' : 'hover:bg-gray-200 dark:hover:bg-gray-700'
                         )}
                         aria-label={isExpanded ? t('aria.collapse') : t('aria.expand')}
                         onClick={(e) => {
@@ -112,14 +117,14 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
 
                 <button
                     type="button"
-                    className="flex min-w-0 flex-1 items-center text-left"
+                    className="relative flex min-w-0 flex-1 items-center text-left"
                     onClick={() => onFolderClick(node.id)}
                 >
                     <Icon
                         icon="lucide:folder"
                         className={cn(
                             'w-4 h-4 mr-2.5 flex-shrink-0',
-                            isActive ? 'text-white' : ''
+                            isActive ? 'text-[rgb(var(--color-primary-500-rgb))]' : ''
                         )}
                         style={{ color: isActive ? undefined : (node.color || '#60a5fa') }}
                         aria-hidden="true"
