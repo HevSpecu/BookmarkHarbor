@@ -685,6 +685,10 @@ export function App() {
 
     // 导出
     const handleExport = useCallback((scope: ExportScope) => {
+        if (scope === 'selection' && selection.selectedIds.size === 0) {
+            addToast({ title: t('toast.exportSelectionEmpty'), color: 'warning', timeout: 3000 });
+            return;
+        }
         try {
             exportAndDownload(scope, nodes, {
                 folderId: scope === 'folder' ? currentFolderId : undefined,
@@ -693,7 +697,7 @@ export function App() {
         } catch (error) {
             console.error('Export failed:', error);
         }
-    }, [nodes, currentFolderId, selection.selectedIds]);
+    }, [nodes, currentFolderId, selection.selectedIds, t]);
 
     // 更新节点
     const handleUpdateNode = useCallback((id: string, updates: Parameters<typeof updateNode>[1]) => {
@@ -873,6 +877,7 @@ export function App() {
                 onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
                 inspectorOpen={inspectorOpen}
                 onInspectorToggle={() => setInspectorOpen(!inspectorOpen)}
+                selectedCount={selection.selectedIds.size}
                 onNewFolder={handleNewFolder}
                 onNewBookmark={handleNewBookmark}
                 onImport={handleImport}

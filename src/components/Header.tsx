@@ -31,6 +31,7 @@ interface HeaderProps {
     onSidebarToggle: () => void;
     inspectorOpen: boolean;
     onInspectorToggle: () => void;
+    selectedCount: number;
     onNewFolder: () => void;
     onNewBookmark: () => void;
     onImport: (files: FileList) => void;
@@ -49,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
     onSidebarToggle,
     inspectorOpen,
     onInspectorToggle,
+    selectedCount,
     onNewFolder,
     onNewBookmark,
     onImport,
@@ -276,7 +278,7 @@ export const Header: React.FC<HeaderProps> = ({
                             <DropdownItem key="folder" onPress={() => onExport('folder')}>
                                 {t('export.currentFolder')}
                             </DropdownItem>
-                            <DropdownItem key="selection" onPress={() => onExport('selection')}>
+                            <DropdownItem key="selection" onPress={() => onExport('selection')} isDisabled={selectedCount === 0}>
                                 {t('export.selection')}
                             </DropdownItem>
                         </DropdownMenu>
@@ -329,6 +331,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 key="exportSelection"
                                 startContent={<Icon icon="lucide:check-square" className="w-4 h-4" />}
                                 onPress={() => onExport('selection')}
+                                isDisabled={selectedCount === 0}
                             >
                                 {t('export.selection')}
                             </DropdownItem>
