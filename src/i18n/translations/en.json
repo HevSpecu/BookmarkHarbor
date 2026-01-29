@@ -15,10 +15,12 @@
         "localMode": "Local Mode"
     },
     "toolbar": {
+        "new": "New",
         "newFolder": "New Folder",
         "newBookmark": "New Bookmark",
         "import": "Import",
         "export": "Export",
+        "manage": "Manage",
         "delete": "Delete",
         "selection": "Selection",
         "selectionMode": "Selection Mode",
@@ -34,7 +36,8 @@
         "sortByType": "Type",
         "order": "Order",
         "ascending": "Ascending",
-        "descending": "Descending"
+        "descending": "Descending",
+        "view": "View"
     },
     "viewMode": {
         "list": "List View",
@@ -48,6 +51,10 @@
         "theme": "Theme",
         "language": "Language",
         "autoExpandTree": "Auto expand folder tree",
+        "singleClickAction": "Single click action",
+        "singleClickSelect": "Select",
+        "singleClickOpen": "Open",
+        "gridColumns": "Columns per row",
         "cardFolderPreviewSize": "Folder preview size",
         "defaultView": "Default view",
         "rememberFolderView": "Remember folder view",
@@ -162,7 +169,8 @@
         "unfavorited": "Removed from favorites",
         "readLaterAdded": "Added to read later",
         "readLaterRemoved": "Removed from read later",
-        "restored": "Restored {{count}} item(s)"
+        "restored": "Restored {{count}} item(s)",
+        "exportSelectionEmpty": "Select items to export"
     },
     "aria": {
         "toggleSidebar": "Toggle sidebar",

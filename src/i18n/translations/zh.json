@@ -15,10 +15,12 @@
         "localMode": "本地模式"
     },
     "toolbar": {
+        "new": "新建",
         "newFolder": "新建文件夹",
         "newBookmark": "新建书签",
         "import": "导入",
         "export": "导出",
+        "manage": "管理",
         "delete": "删除",
         "selection": "选择",
         "selectionMode": "选择模式",
@@ -34,7 +36,8 @@
         "sortByType": "类型",
         "order": "顺序",
         "ascending": "递增",
-        "descending": "递减"
+        "descending": "递减",
+        "view": "视图"
     },
     "viewMode": {
         "list": "列表视图",
@@ -48,6 +51,10 @@
         "theme": "主题",
         "language": "语言",
         "autoExpandTree": "自动展开目录树",
+        "singleClickAction": "单击行为",
+        "singleClickSelect": "单击选中",
+        "singleClickOpen": "单击打开",
+        "gridColumns": "每行列数",
         "cardFolderPreviewSize": "文件夹预览尺寸",
         "defaultView": "默认视图",
         "rememberFolderView": "记忆文件夹视图",
@@ -162,7 +169,8 @@
         "unfavorited": "已从收藏夹移除",
         "readLaterAdded": "已添加到稍后阅读",
         "readLaterRemoved": "已从稍后阅读移除",
-        "restored": "已恢复 {{count}} 个项目"
+        "restored": "已恢复 {{count}} 个项目",
+        "exportSelectionEmpty": "请先选择要导出的项目"
     },
     "aria": {
         "toggleSidebar": "切换侧边栏",

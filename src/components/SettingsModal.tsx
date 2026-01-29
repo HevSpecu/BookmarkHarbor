@@ -10,16 +10,17 @@ import {
     ModalBody,
     ModalFooter,
     Button,
-    Switch,
     Select,
     SelectItem,
     Divider,
     Tooltip,
+    Slider,
 } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
-import type { Theme, Locale, CardFolderPreviewSize, ViewMode } from '../core/types';
+import type { Theme, Locale, CardFolderPreviewSize, ViewMode, SingleClickAction } from '../core/types';
 import { cn } from '../core/utils';
+import { ThemeSwitch } from './ThemeSwitch';
 
 // 预设主题色
 const THEME_COLORS = [
@@ -50,6 +51,10 @@ interface SettingsModalProps {
     onRememberFolderViewChange: (value: boolean) => void;
     themeColor: string;
     onThemeColorChange: (color: string) => void;
+    singleClickAction: SingleClickAction;
+    onSingleClickActionChange: (action: SingleClickAction) => void;
+    gridColumns: number;
+    onGridColumnsChange: (value: number) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -69,6 +74,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onRememberFolderViewChange,
     themeColor,
     onThemeColorChange,
+    singleClickAction,
+    onSingleClickActionChange,
+    gridColumns,
+    onGridColumnsChange,
 }) => {
     const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
@@ -153,16 +162,64 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 <Icon icon="lucide:folder-tree" className="w-5 h-5 text-gray-400" />
                                 <span className="text-sm">{t('settings.autoExpandTree')}</span>
                             </div>
-                            <Switch
+                            <ThemeSwitch
                                 size="sm"
                                 color="primary"
                                 isSelected={autoExpandTree}
                                 onValueChange={onAutoExpandTreeChange}
-                                classNames={{
-                                    wrapper: 'bg-gray-200 dark:bg-gray-700 data-[selected=true]:bg-[rgb(var(--color-primary-500-rgb))]',
-                                    thumb: 'bg-white shadow-sm',
-                                }}
                             />
+                        </div>
+
+                        {/* 单击行为 */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Icon icon="lucide:mouse-pointer-2" className="w-5 h-5 text-gray-400" />
+                                <span className="text-sm">{t('settings.singleClickAction')}</span>
+                            </div>
+                            <Select
+                                size="sm"
+                                selectedKeys={[singleClickAction]}
+                                onSelectionChange={(keys) => {
+                                    const selected = Array.from(keys)[0] as SingleClickAction;
+                                    if (selected) onSingleClickActionChange(selected);
+                                }}
+                                className="w-32"
+                                aria-label={t('settings.singleClickAction')}
+                            >
+                                <SelectItem key="select" startContent={<Icon icon="lucide:check-square" className="w-4 h-4" />}>
+                                    {t('settings.singleClickSelect')}
+                                </SelectItem>
+                                <SelectItem key="open" startContent={<Icon icon="lucide:external-link" className="w-4 h-4" />}>
+                                    {t('settings.singleClickOpen')}
+                                </SelectItem>
+                            </Select>
+                        </div>
+
+                        {/* 卡片/平铺列数 */}
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <Icon icon="lucide:columns-3" className="w-5 h-5 text-gray-400" />
+                                <span className="text-sm">{t('settings.gridColumns')}</span>
+                            </div>
+                            <div className="flex items-center gap-3 w-44">
+                                <Slider
+                                    size="sm"
+                                    minValue={2}
+                                    maxValue={10}
+                                    step={1}
+                                    value={gridColumns}
+                                    onChange={(value) => {
+                                        const next = Array.isArray(value) ? value[0] : value;
+                                        onGridColumnsChange(next);
+                                    }}
+                                    aria-label={t('settings.gridColumns')}
+                                    classNames={{
+                                        filler: 'bg-[rgb(var(--color-primary-500-rgb))]',
+                                        thumb: 'bg-white border border-gray-200',
+                                    }}
+                                />
+                                <span className="text-xs text-gray-500 w-4 text-right">{gridColumns}</span>
+                            </div>
                         </div>
 
                         {/* 卡片视图文件夹预览尺寸 */}
@@ -221,15 +278,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 <Icon icon="lucide:save" className="w-5 h-5 text-gray-400" />
                                 <span className="text-sm">{t('settings.rememberFolderView')}</span>
                             </div>
-                            <Switch
+                            <ThemeSwitch
                                 size="sm"
                                 color="primary"
                                 isSelected={rememberFolderView}
                                 onValueChange={onRememberFolderViewChange}
-                                classNames={{
-                                    wrapper: 'bg-gray-200 dark:bg-gray-700 data-[selected=true]:bg-[rgb(var(--color-primary-500-rgb))]',
-                                    thumb: 'bg-white shadow-sm',
-                                }}
                             />
                         </div>
                     </div>

@@ -42,6 +42,7 @@ interface SortableBookmarkItemProps {
     isRenaming: boolean;
     selectionMode: boolean;
     hasSelection: boolean;
+    onPrimaryAction: (node: Node, keys: ModifierKeys) => void;
     onSelect: (id: string, keys: ModifierKeys, options?: { forceToggle?: boolean }) => void;
     onDoubleClick: (node: Node) => void;
     onRenameSubmit: (id: string, newTitle: string) => void;
@@ -58,6 +59,7 @@ export function SortableBookmarkItem({
     isRenaming,
     selectionMode,
     hasSelection,
+    onPrimaryAction,
     onSelect,
     onDoubleClick,
     onRenameSubmit,
@@ -103,7 +105,7 @@ export function SortableBookmarkItem({
                 isRenaming={isRenaming}
                 selectionMode={selectionMode}
                 hasSelection={hasSelection}
-                onSelect={(keys) => onSelect(node.id, keys)}
+                onPrimaryAction={(keys) => onPrimaryAction(node, keys)}
                 onToggleSelect={() => onSelect(node.id, { shiftKey: false, metaKey: false, ctrlKey: false }, { forceToggle: true })}
                 onDoubleClick={() => onDoubleClick(node)}
                 onRenameSubmit={(newTitle) => onRenameSubmit(node.id, newTitle)}

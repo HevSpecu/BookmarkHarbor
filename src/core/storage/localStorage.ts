@@ -54,6 +54,8 @@ function getDefaultData(): StorageData {
             rememberFolderView: false,
             folderViewModes: {},
             themeColor: '#3B82F6',
+            singleClickAction: 'select',
+            gridColumns: 4,
         },
     };
 }
@@ -76,6 +78,17 @@ export function loadFromStorage(): StorageData {
             ...defaults.settings,
             ...(data.settings ?? {}),
         };
+
+        // 校验并修正设置值
+        if (data.settings.singleClickAction !== 'select' && data.settings.singleClickAction !== 'open') {
+            data.settings.singleClickAction = defaults.settings.singleClickAction;
+        }
+
+        const gridColumns = Number(data.settings.gridColumns);
+        const clampedColumns = Number.isFinite(gridColumns)
+            ? Math.min(10, Math.max(2, Math.round(gridColumns)))
+            : defaults.settings.gridColumns;
+        data.settings.gridColumns = clampedColumns;
 
         // 视图模式迁移：'grid' -> 'card'
         if ((data.settings as { viewMode?: unknown }).viewMode === 'grid') {

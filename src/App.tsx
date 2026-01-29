@@ -20,7 +20,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
 // Core
-import type { Node, ExportScope, Locale, CardFolderPreviewSize, ViewMode } from './core/types';
+import type { Node, ExportScope, Locale, CardFolderPreviewSize, ViewMode, SingleClickAction } from './core/types';
 import {
     useNodes,
     useNodeActions,
@@ -105,6 +105,8 @@ export function App() {
     const rememberFolderView = settings.rememberFolderView;
     const folderViewModes = settings.folderViewModes ?? {};
     const themeColor = settings.themeColor;
+    const singleClickAction = settings.singleClickAction;
+    const gridColumns = settings.gridColumns;
 
     // 应用主题色到 CSS 变量
     useEffect(() => {
@@ -420,6 +422,15 @@ export function App() {
 
     const handleThemeColorChange = useCallback((color: string) => {
         updateSettings({ themeColor: color });
+    }, [updateSettings]);
+
+    const handleSingleClickActionChange = useCallback((action: SingleClickAction) => {
+        updateSettings({ singleClickAction: action });
+    }, [updateSettings]);
+
+    const handleGridColumnsChange = useCallback((value: number) => {
+        const next = Math.min(10, Math.max(2, Math.round(value)));
+        updateSettings({ gridColumns: next });
     }, [updateSettings]);
 
     // 导航到文件夹
@@ -792,6 +803,21 @@ export function App() {
         selection.selectOne(id);
     }, [activeViewMode, selection, selectionMode]);
 
+    const handlePrimaryAction = useCallback((node: Node, keys: ModifierKeys) => {
+        const shouldOpen = singleClickAction === 'open'
+            && !keys.shiftKey
+            && !keys.metaKey
+            && !keys.ctrlKey
+            && !selectionMode;
+
+        if (shouldOpen) {
+            handleDoubleClick(node);
+            return;
+        }
+
+        handleSelect(node.id, keys);
+    }, [handleDoubleClick, handleSelect, selectionMode, singleClickAction]);
+
     // 键盘快捷键
     useKeyboardShortcuts({
         disabled: false,
@@ -913,6 +939,10 @@ export function App() {
                                     renamingId={renamingId}
                                     searchQuery={searchQuery}
                                     cardFolderPreviewSize={cardFolderPreviewSize}
+                                    gridColumns={gridColumns}
+                                    onGridColumnsChange={handleGridColumnsChange}
+                                    onPrimaryAction={handlePrimaryAction}
+                                    singleClickAction={singleClickAction}
                                     onSelect={handleSelect}
                                     onDoubleClick={handleDoubleClick}
                                     onClearSelection={selection.clearSelection}
@@ -989,6 +1019,10 @@ export function App() {
                     onRememberFolderViewChange={handleRememberFolderViewChange}
                     themeColor={themeColor}
                     onThemeColorChange={handleThemeColorChange}
+                    singleClickAction={singleClickAction}
+                    onSingleClickActionChange={handleSingleClickActionChange}
+                    gridColumns={gridColumns}
+                    onGridColumnsChange={handleGridColumnsChange}
                 />
 
                 <Modal

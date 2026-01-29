@@ -130,6 +130,9 @@ export type ViewMode = 'list' | 'card' | 'tile';
 // 卡片文件夹预览尺寸
 export type CardFolderPreviewSize = '2x2' | '3x3' | '4x3';
 
+// 单击行为
+export type SingleClickAction = 'select' | 'open';
+
 // 主题
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -179,6 +182,8 @@ export interface StorageData {
         rememberFolderView: boolean;
         folderViewModes: Record<string, ViewMode>;
         themeColor: string;
+        singleClickAction: SingleClickAction;
+        gridColumns: number;
     };
 }
 
@@ -210,5 +215,7 @@ export const DEFAULT_STORAGE_DATA: StorageData = {
         rememberFolderView: false,
         folderViewModes: {},
         themeColor: '#3B82F6',
+        singleClickAction: 'select',
+        gridColumns: 4,
     },
 };

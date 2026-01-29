@@ -2,13 +2,13 @@
  * ContentArea 组件 - 主内容区域（复刻参考设计：分离 SUBFOLDERS 和 BOOKMARKS）
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useCallback, useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { LayoutGroup, motion } from 'framer-motion';
-import type { Node, ViewMode, CardFolderPreviewSize } from '../core/types';
+import type { Node, ViewMode, CardFolderPreviewSize, SingleClickAction } from '../core/types';
 import { BookmarkItem } from './BookmarkItem';
 import { SortableBookmarkItem } from './SortableBookmarkItem';
 import { cn } from '../core/utils';
@@ -31,6 +31,10 @@ interface ContentAreaProps {
     renamingId: string | null;
     searchQuery: string;
     cardFolderPreviewSize: CardFolderPreviewSize;
+    gridColumns: number;
+    onGridColumnsChange: (value: number) => void;
+    onPrimaryAction: (node: Node, keys: ModifierKeys) => void;
+    singleClickAction: SingleClickAction;
     onSelect: (id: string, keys: ModifierKeys, options?: { forceToggle?: boolean }) => void;
     onDoubleClick: (node: Node) => void;
     onClearSelection: () => void;
@@ -50,6 +54,10 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     renamingId,
     searchQuery,
     cardFolderPreviewSize,
+    gridColumns,
+    onGridColumnsChange,
+    onPrimaryAction,
+    singleClickAction,
     onSelect,
     onDoubleClick,
     onClearSelection,
@@ -58,10 +66,34 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
 }) => {
     const { t } = useTranslation();
     const hasSelection = selectedIds.size > 0;
+    const contentRef = useRef<HTMLDivElement | null>(null);
+    const [contentWidth, setContentWidth] = useState(0);
 
     const { setNodeRef } = useDroppable({
         id: `content:${folderId}`,
     });
+
+    const setContentRefs = useCallback(
+        (node: HTMLDivElement | null) => {
+            contentRef.current = node;
+            setNodeRef(node);
+        },
+        [setNodeRef]
+    );
+
+    useEffect(() => {
+        if (!contentRef.current || typeof ResizeObserver === 'undefined') return;
+        const node = contentRef.current;
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                if (entry.contentRect) {
+                    setContentWidth(entry.contentRect.width);
+                }
+            }
+        });
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, []);
 
     const sortingStrategy = useMemo(() => {
         return viewMode === 'list' ? verticalListSortingStrategy : rectSortingStrategy;
@@ -86,6 +118,134 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
 
     const enableLayoutAnimation = viewMode !== 'list' && !isDragging;
     const layoutTransition = { layout: { duration: 0.18, ease: 'easeOut' } } as const;
+
+    const allowDoubleClick = singleClickAction !== 'open';
+
+    const clampColumns = useCallback((value: number) => Math.min(10, Math.max(2, Math.round(value))), []);
+
+    const handleGridStep = useCallback(
+        (delta: number) => {
+            if (viewMode === 'list') return;
+            const next = clampColumns(gridColumns + delta);
+            if (next !== gridColumns) {
+                onGridColumnsChange(next);
+            }
+        },
+        [clampColumns, gridColumns, onGridColumnsChange, viewMode]
+    );
+
+    const handleWheel = useCallback(
+        (event: React.WheelEvent<HTMLDivElement>) => {
+            if (viewMode === 'list') return;
+            if (!event.ctrlKey && !event.metaKey) return;
+            event.preventDefault();
+            const delta = event.deltaY;
+            if (Math.abs(delta) < 4) return;
+            handleGridStep(delta > 0 ? 1 : -1);
+        },
+        [handleGridStep, viewMode]
+    );
+
+    const pinchRef = useRef<{ distance: number } | null>(null);
+
+    const handleTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+        if (viewMode === 'list') return;
+        if (event.touches.length === 2) {
+            const [a, b] = event.touches;
+            const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+            pinchRef.current = { distance };
+        }
+    }, [viewMode]);
+
+    const handleTouchMove = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+        if (viewMode === 'list') return;
+        if (event.touches.length !== 2 || !pinchRef.current) return;
+        event.preventDefault();
+        const [a, b] = event.touches;
+        const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        const diff = distance - pinchRef.current.distance;
+        if (Math.abs(diff) > 24) {
+            handleGridStep(diff > 0 ? -1 : 1);
+            pinchRef.current = { distance };
+        }
+    }, [handleGridStep, viewMode]);
+
+    const handleTouchEnd = useCallback(() => {
+        pinchRef.current = null;
+    }, []);
+
+    const effectiveColumns = useMemo(() => {
+        if (viewMode === 'list') return 1;
+        const baseColumns = clampColumns(gridColumns);
+        if (!contentWidth) return baseColumns;
+        const minWidth = viewMode === 'tile' ? 160 : 220;
+        const gap = viewMode === 'tile' ? 8 : 12;
+        const maxByWidth = Math.max(2, Math.floor((contentWidth + gap) / (minWidth + gap)));
+        return Math.min(baseColumns, maxByWidth);
+    }, [clampColumns, contentWidth, gridColumns, viewMode]);
+
+    // Get grid class based on view mode
+    const getGridClass = (forFolders = false) => {
+        if (viewMode === 'list') {
+            return 'flex flex-col gap-1';
+        }
+        if (viewMode === 'tile') {
+            return 'grid gap-2 transition-[grid-template-columns] duration-200';
+        }
+        // card view
+        if (forFolders) {
+            return 'grid gap-3 transition-[grid-template-columns] duration-200';
+        }
+        return 'grid gap-3 transition-[grid-template-columns] duration-200';
+    };
+
+    const renderNode = (node: Node, isReadOnly: boolean) => {
+        if (isReadOnly) {
+            return (
+                <BookmarkItem
+                    key={node.id}
+                    node={node}
+                    isSelected={selectedIds.has(node.id)}
+                    viewMode={viewMode}
+                    isRenaming={renamingId === node.id}
+                    selectionMode={selectionMode}
+                    hasSelection={hasSelection}
+                    onPrimaryAction={(keys) => onPrimaryAction(node, keys)}
+                    onToggleSelect={() => onSelect(node.id, { shiftKey: false, metaKey: false, ctrlKey: false }, { forceToggle: true })}
+                    onDoubleClick={() => {
+                        if (allowDoubleClick) onDoubleClick(node);
+                    }}
+                    onRenameSubmit={(newTitle) => onRenameSubmit(node.id, newTitle)}
+                    onRenameCancel={onRenameCancel}
+                    childCount={node.type === 'folder' ? getChildCount(node.id) : 0}
+                    childNodes={node.type === 'folder' ? getChildNodes(node.id) : []}
+                    cardFolderPreviewSize={cardFolderPreviewSize}
+                />
+            );
+        }
+
+        return (
+            <SortableBookmarkItem
+                key={node.id}
+                node={node}
+                isSelected={selectedIds.has(node.id)}
+                viewMode={viewMode}
+                isRenaming={renamingId === node.id}
+                selectionMode={selectionMode}
+                hasSelection={hasSelection}
+                onPrimaryAction={onPrimaryAction}
+                onSelect={onSelect}
+                onDoubleClick={(nextNode) => {
+                    if (allowDoubleClick) onDoubleClick(nextNode);
+                }}
+                onRenameSubmit={onRenameSubmit}
+                onRenameCancel={onRenameCancel}
+                childCount={node.type === 'folder' ? getChildCount(node.id) : 0}
+                childNodes={node.type === 'folder' ? getChildNodes(node.id) : []}
+                cardFolderPreviewSize={cardFolderPreviewSize}
+            />
+        );
+    };
 
     // Empty state
     if (nodes.length === 0) {
@@ -113,70 +273,17 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
         );
     }
 
-    const renderNode = (node: Node, isReadOnly: boolean) => {
-        if (isReadOnly) {
-            return (
-                <BookmarkItem
-                    key={node.id}
-                    node={node}
-                    isSelected={selectedIds.has(node.id)}
-                    viewMode={viewMode}
-                    isRenaming={renamingId === node.id}
-                    selectionMode={selectionMode}
-                    hasSelection={hasSelection}
-                    onSelect={(keys) => onSelect(node.id, keys)}
-                    onToggleSelect={() => onSelect(node.id, { shiftKey: false, metaKey: false, ctrlKey: false }, { forceToggle: true })}
-                    onDoubleClick={() => onDoubleClick(node)}
-                    onRenameSubmit={(newTitle) => onRenameSubmit(node.id, newTitle)}
-                    onRenameCancel={onRenameCancel}
-                    childCount={node.type === 'folder' ? getChildCount(node.id) : 0}
-                    childNodes={node.type === 'folder' ? getChildNodes(node.id) : []}
-                    cardFolderPreviewSize={cardFolderPreviewSize}
-                />
-            );
-        }
-
-        return (
-            <SortableBookmarkItem
-                key={node.id}
-                node={node}
-                isSelected={selectedIds.has(node.id)}
-                viewMode={viewMode}
-                isRenaming={renamingId === node.id}
-                selectionMode={selectionMode}
-                hasSelection={hasSelection}
-                onSelect={onSelect}
-                onDoubleClick={onDoubleClick}
-                onRenameSubmit={onRenameSubmit}
-                onRenameCancel={onRenameCancel}
-                childCount={node.type === 'folder' ? getChildCount(node.id) : 0}
-                childNodes={node.type === 'folder' ? getChildNodes(node.id) : []}
-                cardFolderPreviewSize={cardFolderPreviewSize}
-            />
-        );
-    };
-
-    // Get grid class based on view mode
-    const getGridClass = (forFolders = false) => {
-        if (viewMode === 'list') {
-            return 'flex flex-col gap-1';
-        }
-        if (viewMode === 'tile') {
-            return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2';
-        }
-        // card view
-        if (forFolders) {
-            return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3';
-        }
-        return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3';
-    };
-
     // When searching, show all results together
     if (searchQuery) {
         return (
             <div
-                ref={setNodeRef}
+                ref={setContentRefs}
                 className="flex-1 overflow-y-auto p-5"
+                onWheel={handleWheel}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
                 onPointerDown={(e) => {
                     if (e.target === e.currentTarget) onClearSelection();
                 }}
@@ -188,6 +295,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                                 layout
                                 transition={layoutTransition}
                                 className={cn(getGridClass())}
+                                style={viewMode === 'list' ? undefined : { gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))` }}
                                 onPointerDown={(e) => {
                                     if (e.target === e.currentTarget) onClearSelection();
                                 }}
@@ -202,6 +310,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                     ) : (
                         <div
                             className={cn(getGridClass())}
+                            style={viewMode === 'list' ? undefined : { gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))` }}
                             onPointerDown={(e) => {
                                 if (e.target === e.currentTarget) onClearSelection();
                             }}
@@ -217,11 +326,16 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     return (
         <motion.div
             key={folderId}
-            ref={setNodeRef}
+            ref={setContentRefs}
             className="flex-1 overflow-y-auto px-5 py-4"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
             onPointerDown={(e) => {
                 if (e.target === e.currentTarget) onClearSelection();
             }}
@@ -233,6 +347,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                             layout
                             transition={layoutTransition}
                             className={cn(getGridClass())}
+                            style={viewMode === 'list' ? undefined : { gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))` }}
                             onPointerDown={(e) => {
                                 if (e.target === e.currentTarget) onClearSelection();
                             }}
@@ -276,6 +391,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                 ) : (
                     <div
                         className={cn(getGridClass())}
+                        style={viewMode === 'list' ? undefined : { gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))` }}
                         onPointerDown={(e) => {
                             if (e.target === e.currentTarget) onClearSelection();
                         }}

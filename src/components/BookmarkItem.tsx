@@ -23,7 +23,7 @@ interface BookmarkItemProps {
     isRenaming: boolean;
     selectionMode: boolean;
     hasSelection: boolean;
-    onSelect: (keys: ModifierKeys) => void;
+    onPrimaryAction: (keys: ModifierKeys) => void;
     onToggleSelect: () => void;
     onDoubleClick: () => void;
     onRenameSubmit: (newTitle: string) => void;
@@ -48,7 +48,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     isRenaming,
     selectionMode,
     hasSelection,
-    onSelect,
+    onPrimaryAction,
     onToggleSelect,
     onDoubleClick,
     onRenameSubmit,
@@ -62,6 +62,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     const [isHovered, setIsHovered] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const ignoreBlurRef = useRef(false);
+    const lastTapRef = useRef(0);
 
     useEffect(() => {
         if (isRenaming && inputRef.current) {
@@ -86,6 +87,20 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     const folderColor = getFolderColor(node.id, node.color);
     const markerColor = node.color || (isFolder ? folderColor : '#6366f1');
     const showSelectionToggle = !isRenaming && (selectionMode || isSelected || (hasSelection && isHovered));
+    const doubleTapWindow = 300;
+
+    const handleTouchDoubleTap = (event: React.PointerEvent) => {
+        if (event.pointerType !== 'touch') return false;
+        const now = Date.now();
+        const lastTap = lastTapRef.current;
+        lastTapRef.current = now;
+        if (lastTap && now - lastTap < doubleTapWindow) {
+            lastTapRef.current = 0;
+            onDoubleClick();
+            return true;
+        }
+        return false;
+    };
 
     const renderSelectionToggle = (className?: string) => {
         return (
@@ -139,7 +154,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 onPointerDown={(e) => {
                     if (isRenaming) return;
                     if (e.button !== 0) return;
-                    onSelect({
+                    if (handleTouchDoubleTap(e)) return;
+                    onPrimaryAction({
                         shiftKey: e.shiftKey,
                         metaKey: e.metaKey,
                         ctrlKey: e.ctrlKey,
@@ -250,7 +266,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 onPointerDown={(e) => {
                     if (isRenaming) return;
                     if (e.button !== 0) return;
-                    onSelect({
+                    if (handleTouchDoubleTap(e)) return;
+                    onPrimaryAction({
                         shiftKey: e.shiftKey,
                         metaKey: e.metaKey,
                         ctrlKey: e.ctrlKey,
@@ -365,7 +382,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 onPointerDown={(e) => {
                     if (isRenaming) return;
                     if (e.button !== 0) return;
-                    onSelect({
+                    if (handleTouchDoubleTap(e)) return;
+                    onPrimaryAction({
                         shiftKey: e.shiftKey,
                         metaKey: e.metaKey,
                         ctrlKey: e.ctrlKey,
@@ -537,7 +555,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
             onPointerLeave={() => setIsHovered(false)}
             onPointerDown={(e) => {
                 if (e.button !== 0) return;
-                onSelect({
+                if (handleTouchDoubleTap(e)) return;
+                onPrimaryAction({
                     shiftKey: e.shiftKey,
                     metaKey: e.metaKey,
                     ctrlKey: e.ctrlKey,
@@ -547,7 +566,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
             onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onSelect({ shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey });
+                    onPrimaryAction({ shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey });
                 }
             }}
             className={cn(
