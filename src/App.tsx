@@ -35,6 +35,7 @@ import {
     buildBreadcrumbs,
     htmlFileSchema,
     detectCycleForMultiple,
+    cn,
 } from './core';
 import { importHtmlFile } from './core/importExport/htmlParser';
 import { exportAndDownload } from './core/importExport/htmlExporter';
@@ -885,23 +886,32 @@ export function App() {
                 onDragEnd={handleDragEnd}
             >
                 {/* 主内容区域 */}
-                <div className="flex flex-1 overflow-hidden">
+                <div className="flex flex-1 overflow-hidden relative">
                     {/* 侧边栏 */}
                     {sidebarOpen && (
-                        <Sidebar
-                            nodes={nodes}
-                            rootId="root"
-                            currentFolderId={currentFolderId}
-                            expandedFolders={expandedFolders}
-                            onFolderClick={handleFolderClick}
-                            onToggleExpand={handleToggleExpand}
-                            onNewFolder={handleNewFolder}
-                            onOpenSettings={() => setSettingsOpen(true)}
-                            onNavigateToFavorites={handleNavigateToFavorites}
-                            onNavigateToReadLater={handleNavigateToReadLater}
-                            onNavigateToTrash={handleNavigateToTrash}
-                            currentView={currentView}
-                        />
+                        <>
+                            <div
+                                className="fixed inset-0 bg-black/30 z-30 sm:hidden"
+                                onClick={() => setSidebarOpen(false)}
+                                aria-hidden="true"
+                            />
+                            <div className="fixed inset-y-0 left-0 z-40 w-60 sm:static sm:z-auto sm:w-60">
+                                <Sidebar
+                                    nodes={nodes}
+                                    rootId="root"
+                                    currentFolderId={currentFolderId}
+                                    expandedFolders={expandedFolders}
+                                    onFolderClick={handleFolderClick}
+                                    onToggleExpand={handleToggleExpand}
+                                    onNewFolder={handleNewFolder}
+                                    onOpenSettings={() => setSettingsOpen(true)}
+                                    onNavigateToFavorites={handleNavigateToFavorites}
+                                    onNavigateToReadLater={handleNavigateToReadLater}
+                                    onNavigateToTrash={handleNavigateToTrash}
+                                    currentView={currentView}
+                                />
+                            </div>
+                        </>
                     )}
                     {/* 主区域 */}
                     <main id="main" tabIndex={-1} className="flex-1 flex flex-col bg-white dark:bg-slate-900 relative">
@@ -924,7 +934,7 @@ export function App() {
                             onViewModeChange={handleViewModeChange}
                         />
 
-                        <div className="flex flex-1 overflow-hidden">
+                        <div className="flex flex-1 overflow-hidden relative">
                             {/* 内容列表 */}
                             <div className="flex-1 min-w-0">
                                 <ContentArea
@@ -952,11 +962,21 @@ export function App() {
                             </div>
 
                             {/* 属性面板 */}
+                            {inspectorOpen && (
+                                <div
+                                    className="fixed inset-0 bg-black/30 z-30 sm:hidden"
+                                    onClick={() => setInspectorOpen(false)}
+                                    aria-hidden="true"
+                                />
+                            )}
                             <div
-                                className="h-full overflow-hidden transition-[width] duration-200 ease-out"
-                                style={{
-                                    width: inspectorOpen ? 'var(--inspector-width)' : '0px',
-                                }}
+                                className={cn(
+                                    'fixed inset-y-0 right-0 z-40 w-[min(88vw,24rem)] overflow-hidden transition-transform duration-200 ease-out',
+                                    'sm:static sm:z-auto sm:h-full sm:transition-[width] sm:duration-200 sm:ease-out',
+                                    inspectorOpen
+                                        ? 'translate-x-0 sm:w-[var(--inspector-width)] pointer-events-auto'
+                                        : 'translate-x-full sm:w-0 pointer-events-none'
+                                )}
                             >
                                 <div
                                     className="h-full transition-opacity duration-200"

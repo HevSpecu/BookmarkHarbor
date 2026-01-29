@@ -267,7 +267,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <div className="w-px h-5 bg-gray-200 dark:bg-white/10 mx-1" />
 
                 {/* 视图切换 */}
-                <ButtonGroup size="sm">
+                <ButtonGroup size="sm" className="hidden sm:inline-flex">
                     <Button
                         isIconOnly
                         variant="light"
@@ -311,6 +311,46 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                         <Icon icon="lucide:layout-grid" className="h-4 w-4" aria-hidden="true" />
                     </Button>
                 </ButtonGroup>
+
+                <div className="sm:hidden">
+                    <Dropdown>
+                        <DropdownTrigger>
+                            <Button isIconOnly variant="light" size="sm" aria-label={t('toolbar.view')}>
+                                <Icon
+                                    icon={viewMode === 'list' ? 'lucide:list' : viewMode === 'tile' ? 'lucide:layout-grid' : 'lucide:grid-2x2'}
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                />
+                            </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu aria-label={t('toolbar.view')}>
+                            <DropdownItem
+                                key="list"
+                                startContent={<Icon icon="lucide:list" className="w-4 h-4" />}
+                                endContent={viewMode === 'list' ? <Icon icon="lucide:check" className="w-4 h-4" /> : null}
+                                onPress={() => onViewModeChange('list')}
+                            >
+                                {t('viewMode.list')}
+                            </DropdownItem>
+                            <DropdownItem
+                                key="card"
+                                startContent={<Icon icon="lucide:grid-2x2" className="w-4 h-4" />}
+                                endContent={viewMode === 'card' ? <Icon icon="lucide:check" className="w-4 h-4" /> : null}
+                                onPress={() => onViewModeChange('card')}
+                            >
+                                {t('viewMode.card')}
+                            </DropdownItem>
+                            <DropdownItem
+                                key="tile"
+                                startContent={<Icon icon="lucide:layout-grid" className="w-4 h-4" />}
+                                endContent={viewMode === 'tile' ? <Icon icon="lucide:check" className="w-4 h-4" /> : null}
+                                onPress={() => onViewModeChange('tile')}
+                            >
+                                {t('viewMode.tile')}
+                            </DropdownItem>
+                        </DropdownMenu>
+                    </Dropdown>
+                </div>
             </div>
         </div>
     );
