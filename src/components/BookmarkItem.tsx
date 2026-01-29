@@ -84,6 +84,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
 
     const isFolder = node.type === 'folder';
     const folderColor = getFolderColor(node.id, node.color);
+    const markerColor = node.color || (isFolder ? folderColor : '#6366f1');
     const showSelectionToggle = !isRenaming && (selectionMode || isSelected || (hasSelection && isHovered));
 
     const renderSelectionToggle = (className?: string) => {
@@ -220,8 +221,15 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                         )}
                     </div>
 
-                    {/* Selected indicator */}
-                    {renderSelectionToggle('flex-shrink-0')}
+                    {/* Tail indicator */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: markerColor }}
+                            aria-hidden="true"
+                        />
+                        {renderSelectionToggle()}
+                    </div>
                 </CardBody>
             </Card>
         );
@@ -367,22 +375,43 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 className={cn(
                     'overflow-hidden w-full transition-all transition-transform border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
-                    isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))]'
+                    isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-50-rgb))] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.35)]'
                 )}
             >
                 <CardBody className="p-0">
                     <div
-                        className="aspect-[16/10] w-full bg-cover bg-center bg-no-repeat relative"
+                        className="aspect-[16/10] w-full bg-cover bg-center bg-no-repeat relative flex items-center justify-center"
                         style={{
                             background: node.coverUrl
                                 ? `url(${node.coverUrl}) center/cover`
-                                : `linear-gradient(135deg, ${node.color || '#6366f1'}, ${node.color ? node.color + '88' : '#8b5cf6'})`,
+                                : `linear-gradient(135deg, ${markerColor}, ${markerColor}88)`,
                         }}
                     >
                         <div className="absolute top-2 left-2">
                             {renderSelectionToggle()}
                         </div>
-                        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute inset-0 bg-black/10" />
+                        {node.iconUrl ? (
+                            <img
+                                src={node.iconUrl}
+                                alt=""
+                                width={56}
+                                height={56}
+                                loading="lazy"
+                                decoding="async"
+                                className="w-14 h-14 rounded-lg object-contain relative z-10 bg-white/85 p-2 shadow-sm"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                            />
+                        ) : (
+                            <Icon
+                                icon="lucide:bookmark"
+                                className="w-12 h-12 relative z-10"
+                                style={{ color: 'white' }}
+                                aria-hidden="true"
+                            />
+                        )}
                     </div>
                 </CardBody>
 
@@ -409,25 +438,11 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     ) : (
                         <>
                             <div className="flex items-center gap-2 w-full">
-                                {node.iconUrl ? (
-                                    <img
-                                        src={node.iconUrl}
-                                        alt=""
-                                        width={16}
-                                        height={16}
-                                        loading="lazy"
-                                        decoding="async"
-                                        className="w-4 h-4 rounded-sm object-contain flex-shrink-0"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).style.display = 'none';
-                                        }}
-                                    />
-                                ) : (
-                                    <div
-                                        className="w-4 h-4 rounded-sm flex-shrink-0"
-                                        style={{ backgroundColor: node.color || '#6366f1' }}
-                                    />
-                                )}
+                                <span
+                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: markerColor }}
+                                    aria-hidden="true"
+                                />
                                 <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                     {node.title}
                                 </span>

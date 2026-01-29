@@ -30,6 +30,7 @@ import {
     useSelection,
     useKeyboardShortcuts,
     useHistory,
+    useSettings,
     getStorage,
     buildBreadcrumbs,
     htmlFileSchema,
@@ -80,6 +81,7 @@ export function App() {
     const [theme, setTheme] = useTheme();
     const [viewMode, setViewMode] = useViewMode();
     const [locale, setLocale] = useLocale();
+    const { settings, updateSettings } = useSettings();
 
     // 状态
     const [currentFolderId, setCurrentFolderId] = useState('root');
@@ -90,17 +92,19 @@ export function App() {
     const [renamingId, setRenamingId] = useState<string | null>(null);
     const [activeDragId, setActiveDragId] = useState<string | null>(null);
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const [autoExpandTree, setAutoExpandTree] = useState(false);
-    const [cardFolderPreviewSize, setCardFolderPreviewSize] = useState<CardFolderPreviewSize>('2x2');
-    const [customColors, setCustomColors] = useState<string[]>([]);
     const [currentView, setCurrentView] = useState<'bookmarks' | 'favorites' | 'readLater' | 'trash'>('bookmarks');
     const [selectionMode, setSelectionMode] = useState(false);
-    const [defaultViewMode, setDefaultViewMode] = useState<ViewMode>('card');
-    const [rememberFolderView, setRememberFolderView] = useState(false);
-    const [themeColor, setThemeColor] = useState('#3B82F6');
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
+
+    const autoExpandTree = settings.autoExpandTree;
+    const cardFolderPreviewSize = settings.cardFolderPreviewSize;
+    const customColors = settings.customColors;
+    const defaultViewMode = settings.defaultViewMode;
+    const rememberFolderView = settings.rememberFolderView;
+    const folderViewModes = settings.folderViewModes ?? {};
+    const themeColor = settings.themeColor;
 
     // 应用主题色到 CSS 变量
     useEffect(() => {
@@ -242,6 +246,19 @@ export function App() {
         return buildBreadcrumbs(nodes, currentFolderId);
     }, [nodes, currentFolderId]);
 
+    useEffect(() => {
+        if (!autoExpandTree || currentView !== 'bookmarks') return;
+        setExpandedFolders((prev) => {
+            const next = new Set(prev);
+            breadcrumbs.forEach((crumb) => {
+                if (crumb.id !== 'root') {
+                    next.add(crumb.id);
+                }
+            });
+            return next;
+        });
+    }, [autoExpandTree, breadcrumbs, currentView]);
+
     // 获取当前文件夹的子节点
     const currentChildren = useMemo(() => {
         if (currentView !== 'bookmarks') return [];
@@ -299,6 +316,26 @@ export function App() {
     const selection = useSelection({ visibleNodes });
     const history = useHistory({ limit: 200 });
 
+    const activeViewMode = useMemo(() => {
+        if (currentView !== 'bookmarks' || !rememberFolderView) {
+            return viewMode;
+        }
+        return folderViewModes[currentFolderId] ?? defaultViewMode ?? viewMode;
+    }, [currentFolderId, currentView, defaultViewMode, folderViewModes, rememberFolderView, viewMode]);
+
+    const handleViewModeChange = useCallback((mode: ViewMode) => {
+        if (currentView === 'bookmarks' && rememberFolderView) {
+            updateSettings({
+                folderViewModes: {
+                    ...folderViewModes,
+                    [currentFolderId]: mode,
+                },
+            });
+            return;
+        }
+        setViewMode(mode);
+    }, [currentFolderId, currentView, folderViewModes, rememberFolderView, setViewMode, updateSettings]);
+
     type UpdatePatch = Parameters<typeof updateNode>[1];
     type UpdateEntry = { id: string; patch: UpdatePatch };
 
@@ -353,6 +390,37 @@ export function App() {
         setLocale(newLocale);
         changeLanguage(newLocale);
     }, [setLocale]);
+
+    const handleAutoExpandTreeChange = useCallback((value: boolean) => {
+        updateSettings({ autoExpandTree: value });
+    }, [updateSettings]);
+
+    const handleCardFolderPreviewSizeChange = useCallback((size: CardFolderPreviewSize) => {
+        updateSettings({ cardFolderPreviewSize: size });
+    }, [updateSettings]);
+
+    const handleDefaultViewModeChange = useCallback((mode: ViewMode) => {
+        updateSettings({ defaultViewMode: mode });
+    }, [updateSettings]);
+
+    const handleRememberFolderViewChange = useCallback((value: boolean) => {
+        if (value) {
+            updateSettings({
+                rememberFolderView: true,
+                folderViewModes: {
+                    ...folderViewModes,
+                    [currentFolderId]: activeViewMode,
+                },
+            });
+            return;
+        }
+        updateSettings({ rememberFolderView: false });
+        setViewMode(activeViewMode);
+    }, [activeViewMode, currentFolderId, folderViewModes, setViewMode, updateSettings]);
+
+    const handleThemeColorChange = useCallback((color: string) => {
+        updateSettings({ themeColor: color });
+    }, [updateSettings]);
 
     // 导航到文件夹
     const handleNavigate = useCallback((folderId: string) => {
@@ -482,7 +550,7 @@ export function App() {
 
     const collisionDetection = useCallback(
         (args: Parameters<typeof rectIntersection>[0]) => {
-            const base = viewMode === 'list' ? closestCenter : rectIntersection;
+            const base = activeViewMode === 'list' ? closestCenter : rectIntersection;
             const collisions = base(args);
             const nonContentCollisions = collisions.filter(({ id }) => !String(id).startsWith('content:'));
             const pruned = nonContentCollisions.length > 0 ? nonContentCollisions : collisions;
@@ -498,7 +566,7 @@ export function App() {
 
             return folderCollisions.length > 0 ? folderCollisions : pruned;
         },
-        [nodes, viewMode]
+        [activeViewMode, nodes]
     );
 
     const getDragNodeIds = useCallback((activeId: string): string[] => {
@@ -639,13 +707,10 @@ export function App() {
 
     // 添加自定义颜色
     const handleAddCustomColor = useCallback((color: string) => {
-        setCustomColors(prev => {
-            if (prev.includes(color)) return prev;
-            // 最多保留12个自定义颜色
-            const newColors = [color, ...prev].slice(0, 12);
-            return newColors;
-        });
-    }, []);
+        if (customColors.includes(color)) return;
+        const nextColors = [color, ...customColors].slice(0, 12);
+        updateSettings({ customColors: nextColors });
+    }, [customColors, updateSettings]);
 
     // 收藏选中项
     const handleFavorite = useCallback(() => {
@@ -713,7 +778,7 @@ export function App() {
 
     // 选择处理
     const handleSelect = useCallback((id: string, keys: ModifierKeys, options?: { forceToggle?: boolean }) => {
-        if (viewMode === 'list' && keys.shiftKey) {
+        if (activeViewMode === 'list' && keys.shiftKey) {
             selection.selectRange(id);
             return;
         }
@@ -725,7 +790,7 @@ export function App() {
         }
 
         selection.selectOne(id);
-    }, [selection, selectionMode, viewMode]);
+    }, [activeViewMode, selection, selectionMode]);
 
     // 键盘快捷键
     useKeyboardShortcuts({
@@ -829,56 +894,60 @@ export function App() {
                             onRedo={history.redo}
                             canUndo={history.canUndo}
                             canRedo={history.canRedo}
-                            viewMode={viewMode}
-                            onViewModeChange={setViewMode}
+                            viewMode={activeViewMode}
+                            onViewModeChange={handleViewModeChange}
                         />
 
-                        {/* 内容列表 */}
-                        <ContentArea
-                            nodes={visibleNodes}
-                            allNodes={nodes}
-                            folderId={currentFolderId}
-                            viewMode={viewMode}
-                            isDragging={!!activeDragId}
-                            isSortable={isSortableView}
-                            selectionMode={selectionMode}
-                            selectedIds={selection.selectedIds}
-                            renamingId={renamingId}
-                            searchQuery={searchQuery}
-                            cardFolderPreviewSize={cardFolderPreviewSize}
-                            onSelect={handleSelect}
-                            onDoubleClick={handleDoubleClick}
-                            onClearSelection={selection.clearSelection}
-                            onRenameSubmit={handleRenameSubmit}
-                            onRenameCancel={handleRenameCancel}
-                        />
-                    </main>
+                        <div className="flex flex-1 overflow-hidden">
+                            {/* 内容列表 */}
+                            <div className="flex-1 min-w-0">
+                                <ContentArea
+                                    nodes={visibleNodes}
+                                    allNodes={nodes}
+                                    folderId={currentFolderId}
+                                    viewMode={activeViewMode}
+                                    isDragging={!!activeDragId}
+                                    isSortable={isSortableView}
+                                    selectionMode={selectionMode}
+                                    selectedIds={selection.selectedIds}
+                                    renamingId={renamingId}
+                                    searchQuery={searchQuery}
+                                    cardFolderPreviewSize={cardFolderPreviewSize}
+                                    onSelect={handleSelect}
+                                    onDoubleClick={handleDoubleClick}
+                                    onClearSelection={selection.clearSelection}
+                                    onRenameSubmit={handleRenameSubmit}
+                                    onRenameCancel={handleRenameCancel}
+                                />
+                            </div>
 
-                    {/* 属性面板 */}
-                    <div
-                        className="h-full overflow-hidden transition-[width] duration-200 ease-out"
-                        style={{
-                            width: inspectorOpen ? 'var(--inspector-width)' : '0px',
-                        }}
-                    >
-                        <div
-                            className="h-full transition-opacity duration-200"
-                            style={{
-                                opacity: inspectorOpen ? 1 : 0,
-                                pointerEvents: inspectorOpen ? 'auto' : 'none',
-                            }}
-                        >
-                            <Inspector
-                                nodes={nodes}
-                                selectedIds={selection.selectedIds}
-                                fallbackId={currentView === 'bookmarks' ? currentFolderId : undefined}
-                                customColors={customColors}
-                                onUpdate={handleUpdateNode}
-                                onClose={() => setInspectorOpen(false)}
-                                onAddCustomColor={handleAddCustomColor}
-                            />
+                            {/* 属性面板 */}
+                            <div
+                                className="h-full overflow-hidden transition-[width] duration-200 ease-out"
+                                style={{
+                                    width: inspectorOpen ? 'var(--inspector-width)' : '0px',
+                                }}
+                            >
+                                <div
+                                    className="h-full transition-opacity duration-200"
+                                    style={{
+                                        opacity: inspectorOpen ? 1 : 0,
+                                        pointerEvents: inspectorOpen ? 'auto' : 'none',
+                                    }}
+                                >
+                                    <Inspector
+                                        nodes={nodes}
+                                        selectedIds={selection.selectedIds}
+                                        fallbackId={currentView === 'bookmarks' ? currentFolderId : undefined}
+                                        customColors={customColors}
+                                        onUpdate={handleUpdateNode}
+                                        onClose={() => setInspectorOpen(false)}
+                                        onAddCustomColor={handleAddCustomColor}
+                                    />
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </main>
                 </div>
 
                 <DragOverlay>
@@ -911,15 +980,15 @@ export function App() {
                     locale={locale}
                     onLocaleChange={handleLocaleChange}
                     autoExpandTree={autoExpandTree}
-                    onAutoExpandTreeChange={setAutoExpandTree}
+                    onAutoExpandTreeChange={handleAutoExpandTreeChange}
                     cardFolderPreviewSize={cardFolderPreviewSize}
-                    onCardFolderPreviewSizeChange={setCardFolderPreviewSize}
+                    onCardFolderPreviewSizeChange={handleCardFolderPreviewSizeChange}
                     defaultViewMode={defaultViewMode}
-                    onDefaultViewModeChange={setDefaultViewMode}
+                    onDefaultViewModeChange={handleDefaultViewModeChange}
                     rememberFolderView={rememberFolderView}
-                    onRememberFolderViewChange={setRememberFolderView}
+                    onRememberFolderViewChange={handleRememberFolderViewChange}
                     themeColor={themeColor}
-                    onThemeColorChange={setThemeColor}
+                    onThemeColorChange={handleThemeColorChange}
                 />
 
                 <Modal

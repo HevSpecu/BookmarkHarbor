@@ -215,9 +215,13 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     }
 
     return (
-        <div
+        <motion.div
+            key={folderId}
             ref={setNodeRef}
             className="flex-1 overflow-y-auto px-5 py-4"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             onPointerDown={(e) => {
                 if (e.target === e.currentTarget) onClearSelection();
             }}
@@ -294,6 +298,6 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                     </div>
                 )}
             </SortableContext>
-        </div>
+        </motion.div>
     );
 };

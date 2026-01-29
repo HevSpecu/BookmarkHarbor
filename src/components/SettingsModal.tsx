@@ -155,8 +155,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                             <Switch
                                 size="sm"
+                                color="primary"
                                 isSelected={autoExpandTree}
                                 onValueChange={onAutoExpandTreeChange}
+                                classNames={{
+                                    wrapper: 'bg-gray-200 dark:bg-gray-700 data-[selected=true]:bg-[rgb(var(--color-primary-500-rgb))]',
+                                    thumb: 'bg-white shadow-sm',
+                                }}
                             />
                         </div>
 
@@ -218,8 +223,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                             <Switch
                                 size="sm"
+                                color="primary"
                                 isSelected={rememberFolderView}
                                 onValueChange={onRememberFolderViewChange}
+                                classNames={{
+                                    wrapper: 'bg-gray-200 dark:bg-gray-700 data-[selected=true]:bg-[rgb(var(--color-primary-500-rgb))]',
+                                    thumb: 'bg-white shadow-sm',
+                                }}
                             />
                         </div>
                     </div>
@@ -269,7 +279,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                 </ModalBody>
                 <ModalFooter>
-                    <Button color="primary" onPress={onClose}>
+                    <Button
+                        color="primary"
+                        onPress={onClose}
+                        className="bg-[rgb(var(--color-primary-500-rgb))] text-white hover:bg-[rgb(var(--color-primary-600-rgb))]"
+                    >
                         {t('dialog.confirm')}
                     </Button>
                 </ModalFooter>
