@@ -1,11 +1,11 @@
-# AuraBookmarks — Agent Guide
+# BookmarkHarbor — Agent Guide
 
 本仓库会从“UI 原型”演进为完整的浏览器书签管理前端产品（单前端项目）。请把本文件当作你（编码助手）在本项目内的工作约束与协作说明。
 
 ## 0. 真相来源（Source of Truth）
 
-- 产品与技术规格：`spec/requirements.md`
-- 若实现过程中发现规格缺失/冲突：先在 PR/改动里**补齐并更新** `spec/requirements.md`（或新增 `spec/decisions.md`），再写代码。
+- 产品与技术事实来源：当前代码库（`src/*`）、README、已确认的用户需求。
+- 若实现过程中发现需求缺失/冲突：在改动里补充**简短决策记录**（建议新增 `docs/decisions.md` 或补充 README），再写代码。
 
 ## 1. 工作方式（必须遵守）
 
@@ -13,12 +13,12 @@
 - 小步迭代：每次改动只解决一个清晰问题，避免夹带重构。
 - 保持可运行：改完必须能本地启动（至少 `bun run dev`）。
 - 不引入重复方案：UI 组件统一用 **HeroUI**；图标统一用 **Iconify**；不要额外引入新的组件库或图标方案。
-- 视觉基准：所有页面与组件样式需复刻 `@refer` 原型（颜色、间距、阴影与布局层级）。
+- 视觉基准：保持与现有 UI 一致（颜色、间距、阴影与层级），优先在现有样式基础上演进。
 - 不提交密钥：所有密钥走 `.env*`；不要把 token/api key 写进代码或文档示例。
 
 ## 2. 技术栈约束（目标形态）
 
-> 当前仓库是 Vite/React 原型；目标形态以 `spec/requirements.md` 为准。
+> 当前仓库是 Vite/React 前端项目；目标形态以现有代码与用户需求为准。
 
 - 包管理：Bun（`bun install` / `bun run ...`）
 - 前端：Vite + React + TypeScript
@@ -50,7 +50,7 @@
 
 - 当前可前端直抓；若引入服务端，需补充 SSRF/CORS 保护策略。
 
-## 6. 开发命令（当前原型）
+## 6. 开发命令
 
 - 安装依赖：`bun install`
 - 启动开发：`bun run dev`

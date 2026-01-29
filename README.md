@@ -1,10 +1,10 @@
-# AuraBookmarks
+# BookmarkHarbor
 
 [English](#english) | [中文](#中文)
 
 ## English
 
-A modern, file-manager-style bookmark manager built with Vite + React. It focuses on fast keyboard-first workflows, visual organization, and local-first storage.
+BookmarkHarbor is a modern, file-manager-style bookmark manager built with Vite + React. It focuses on fast keyboard-first workflows, visual organization, and local-first storage.
 
 ### Features
 
@@ -48,7 +48,7 @@ Current features implemented in this repository:
 ### Data Storage
 
 - Storage backend: LocalStorage
-- Storage key: `aurabookmarks_data`
+- Storage key: `aurabookmarks_data` (legacy key)
 - Soft delete is used for Trash; restore is supported.
 
 ### Project Structure
@@ -56,7 +56,6 @@ Current features implemented in this repository:
 - `src/App.tsx` - Main layout and orchestration
 - `src/components/*` - UI components
 - `src/core/*` - Domain logic (storage, selection, import/export, metadata)
-- `spec/` - Product and technical specifications
 
 ### Tech Stack
 
@@ -104,18 +103,11 @@ bun run lint
 
 Metadata fetch is done on the client. Some sites may block requests due to CORS. In that case the app falls back to favicon heuristics where possible.
 
-### Specs
-
-- `spec/requirements.md`
-- `spec/01-requirements.md`
-- `spec/02-design.md`
-- `spec/03-tasks.md`
-
 ---
 
 ## 中文
 
-AuraBookmarks 是一个文件管理器风格的现代书签管理器，基于 Vite + React 构建，强调键盘优先、可视化组织和本地优先存储。
+BookmarkHarbor（书签浏览器）是一个文件管理器风格的现代书签管理器，基于 Vite + React 构建，强调键盘优先、可视化组织和本地优先存储。
 
 ### 功能
 
@@ -159,7 +151,7 @@ AuraBookmarks 是一个文件管理器风格的现代书签管理器，基于 Vi
 ### 数据存储
 
 - 存储后端：LocalStorage
-- 存储键：`aurabookmarks_data`
+- 存储键：`aurabookmarks_data`（历史键）
 - 回收站使用软删除，可恢复。
 
 ### 项目结构
@@ -167,7 +159,6 @@ AuraBookmarks 是一个文件管理器风格的现代书签管理器，基于 Vi
 - `src/App.tsx` - 主布局与协调逻辑
 - `src/components/*` - UI 组件
 - `src/core/*` - 领域逻辑（存储、选择、导入导出、元信息抓取）
-- `spec/` - 产品与技术规格
 
 ### 技术栈
 
@@ -214,10 +205,3 @@ bun run lint
 ### 元信息抓取说明
 
 元信息抓取在客户端执行。部分站点可能因 CORS 限制而失败，此时会尝试回退到 favicon 规则。
-
-### 规格
-
-- `spec/requirements.md`
-- `spec/01-requirements.md`
-- `spec/02-design.md`
-- `spec/03-tasks.md`
