@@ -81,7 +81,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
                 className={cn(
                     'group flex items-center py-2 px-3 cursor-pointer select-none rounded-xl text-sm transition-all duration-150 relative',
                     'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5',
-                    isActive && 'bg-[rgb(var(--color-primary-100-rgb))] text-[rgb(var(--color-primary-700-rgb))] dark:text-[rgb(var(--color-primary-200-rgb))]',
+                    isActive && 'bg-[rgb(var(--color-primary-100-rgb))] text-[rgb(var(--color-primary-500-rgb))] dark:text-[rgb(var(--color-primary-500-rgb))]',
                     isOver && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-50-rgb))] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.3)]'
                 )}
                 style={{ marginLeft: `${depth * 16}px` }}

@@ -33,11 +33,11 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
 
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-slide-in">
-            <div className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-xl border border-gray-200/50 dark:border-white/10">
+            <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-xl border border-gray-200/50 dark:border-white/10 sm:py-1.5">
                 {/* Selection count badge */}
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[rgb(var(--color-primary-500-rgb))] text-white">
-                    <span className="text-sm font-semibold">{selectedCount}</span>
-                    <span className="text-sm">{t('selection.selected')}</span>
+                <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-[rgb(var(--color-primary-500-rgb))] text-white sm:px-3 sm:py-1.5">
+                    <span className="text-xs font-semibold sm:text-sm">{selectedCount}</span>
+                    <span className="text-[11px] leading-none whitespace-nowrap sm:text-sm">{t('selection.selected')}</span>
                 </div>
 
                 <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
