@@ -183,7 +183,10 @@ export interface StorageData {
         folderViewModes: Record<string, ViewMode>;
         themeColor: string;
         singleClickAction: SingleClickAction;
-        gridColumns: number;
+        cardColumnsDesktop: number;
+        cardColumnsMobile: number;
+        tileColumnsDesktop: number;
+        tileColumnsMobile: number;
     };
 }
 
@@ -216,6 +219,9 @@ export const DEFAULT_STORAGE_DATA: StorageData = {
         folderViewModes: {},
         themeColor: '#3B82F6',
         singleClickAction: 'select',
-        gridColumns: 4,
+        cardColumnsDesktop: 4,
+        cardColumnsMobile: 2,
+        tileColumnsDesktop: 4,
+        tileColumnsMobile: 2,
     },
 };

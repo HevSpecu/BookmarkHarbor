@@ -31,8 +31,14 @@ interface ContentAreaProps {
     renamingId: string | null;
     searchQuery: string;
     cardFolderPreviewSize: CardFolderPreviewSize;
-    gridColumns: number;
-    onGridColumnsChange: (value: number) => void;
+    cardColumnsDesktop: number;
+    cardColumnsMobile: number;
+    tileColumnsDesktop: number;
+    tileColumnsMobile: number;
+    onCardColumnsDesktopChange: (value: number) => void;
+    onCardColumnsMobileChange: (value: number) => void;
+    onTileColumnsDesktopChange: (value: number) => void;
+    onTileColumnsMobileChange: (value: number) => void;
     onPrimaryAction: (node: Node, keys: ModifierKeys) => void;
     singleClickAction: SingleClickAction;
     onSelect: (id: string, keys: ModifierKeys, options?: { forceToggle?: boolean }) => void;
@@ -54,8 +60,14 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     renamingId,
     searchQuery,
     cardFolderPreviewSize,
-    gridColumns,
-    onGridColumnsChange,
+    cardColumnsDesktop,
+    cardColumnsMobile,
+    tileColumnsDesktop,
+    tileColumnsMobile,
+    onCardColumnsDesktopChange,
+    onCardColumnsMobileChange,
+    onTileColumnsDesktopChange,
+    onTileColumnsMobileChange,
     onPrimaryAction,
     singleClickAction,
     onSelect,
@@ -120,18 +132,70 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     const layoutTransition = { layout: { duration: 0.18, ease: 'easeOut' } } as const;
 
     const allowDoubleClick = singleClickAction !== 'open';
+    const isCompact = useMemo(() => {
+        if (contentWidth > 0) return contentWidth < 640;
+        if (typeof window === 'undefined') return false;
+        return window.innerWidth < 640;
+    }, [contentWidth]);
 
-    const clampColumns = useCallback((value: number) => Math.min(10, Math.max(2, Math.round(value))), []);
+    const gridConfig = useMemo(() => {
+        if (viewMode === 'tile') {
+            return isCompact
+                ? {
+                    value: tileColumnsMobile,
+                    min: 1,
+                    max: 2,
+                    onChange: onTileColumnsMobileChange,
+                }
+                : {
+                    value: tileColumnsDesktop,
+                    min: 1,
+                    max: 7,
+                    onChange: onTileColumnsDesktopChange,
+                };
+        }
+        if (viewMode === 'card') {
+            return isCompact
+                ? {
+                    value: cardColumnsMobile,
+                    min: 1,
+                    max: 4,
+                    onChange: onCardColumnsMobileChange,
+                }
+                : {
+                    value: cardColumnsDesktop,
+                    min: 2,
+                    max: 9,
+                    onChange: onCardColumnsDesktopChange,
+                };
+        }
+        return { value: 1, min: 1, max: 1, onChange: () => {} };
+    }, [
+        cardColumnsDesktop,
+        cardColumnsMobile,
+        isCompact,
+        onCardColumnsDesktopChange,
+        onCardColumnsMobileChange,
+        onTileColumnsDesktopChange,
+        onTileColumnsMobileChange,
+        tileColumnsDesktop,
+        tileColumnsMobile,
+        viewMode,
+    ]);
+
+    const clampColumns = useCallback((value: number) => {
+        return Math.min(gridConfig.max, Math.max(gridConfig.min, Math.round(value)));
+    }, [gridConfig.max, gridConfig.min]);
 
     const handleGridStep = useCallback(
         (delta: number) => {
             if (viewMode === 'list') return;
-            const next = clampColumns(gridColumns + delta);
-            if (next !== gridColumns) {
-                onGridColumnsChange(next);
+            const next = clampColumns(gridConfig.value + delta);
+            if (next !== gridConfig.value) {
+                gridConfig.onChange(next);
             }
         },
-        [clampColumns, gridColumns, onGridColumnsChange, viewMode]
+        [clampColumns, gridConfig, viewMode]
     );
 
     const handleWheel = useCallback(
@@ -176,13 +240,13 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
 
     const effectiveColumns = useMemo(() => {
         if (viewMode === 'list') return 1;
-        const baseColumns = clampColumns(gridColumns);
+        const baseColumns = clampColumns(gridConfig.value);
         if (!contentWidth) return baseColumns;
         const minWidth = viewMode === 'tile' ? 160 : 220;
         const gap = viewMode === 'tile' ? 8 : 12;
-        const maxByWidth = Math.max(2, Math.floor((contentWidth + gap) / (minWidth + gap)));
+        const maxByWidth = Math.max(gridConfig.min, Math.floor((contentWidth + gap) / (minWidth + gap)));
         return Math.min(baseColumns, maxByWidth);
-    }, [clampColumns, contentWidth, gridColumns, viewMode]);
+    }, [clampColumns, contentWidth, gridConfig.min, gridConfig.value, viewMode]);
 
     // Get grid class based on view mode
     const getGridClass = (forFolders = false) => {

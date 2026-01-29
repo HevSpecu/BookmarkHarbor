@@ -107,7 +107,10 @@ export function App() {
     const folderViewModes = settings.folderViewModes ?? {};
     const themeColor = settings.themeColor;
     const singleClickAction = settings.singleClickAction;
-    const gridColumns = settings.gridColumns;
+    const cardColumnsDesktop = settings.cardColumnsDesktop;
+    const cardColumnsMobile = settings.cardColumnsMobile;
+    const tileColumnsDesktop = settings.tileColumnsDesktop;
+    const tileColumnsMobile = settings.tileColumnsMobile;
 
     // 应用主题色到 CSS 变量
     useEffect(() => {
@@ -429,9 +432,24 @@ export function App() {
         updateSettings({ singleClickAction: action });
     }, [updateSettings]);
 
-    const handleGridColumnsChange = useCallback((value: number) => {
-        const next = Math.min(10, Math.max(2, Math.round(value)));
-        updateSettings({ gridColumns: next });
+    const handleCardColumnsDesktopChange = useCallback((value: number) => {
+        const next = Math.min(9, Math.max(2, Math.round(value)));
+        updateSettings({ cardColumnsDesktop: next });
+    }, [updateSettings]);
+
+    const handleCardColumnsMobileChange = useCallback((value: number) => {
+        const next = Math.min(4, Math.max(1, Math.round(value)));
+        updateSettings({ cardColumnsMobile: next });
+    }, [updateSettings]);
+
+    const handleTileColumnsDesktopChange = useCallback((value: number) => {
+        const next = Math.min(7, Math.max(1, Math.round(value)));
+        updateSettings({ tileColumnsDesktop: next });
+    }, [updateSettings]);
+
+    const handleTileColumnsMobileChange = useCallback((value: number) => {
+        const next = Math.min(2, Math.max(1, Math.round(value)));
+        updateSettings({ tileColumnsMobile: next });
     }, [updateSettings]);
 
     // 导航到文件夹
@@ -954,8 +972,14 @@ export function App() {
                                     renamingId={renamingId}
                                     searchQuery={searchQuery}
                                     cardFolderPreviewSize={cardFolderPreviewSize}
-                                    gridColumns={gridColumns}
-                                    onGridColumnsChange={handleGridColumnsChange}
+                                    cardColumnsDesktop={cardColumnsDesktop}
+                                    cardColumnsMobile={cardColumnsMobile}
+                                    tileColumnsDesktop={tileColumnsDesktop}
+                                    tileColumnsMobile={tileColumnsMobile}
+                                    onCardColumnsDesktopChange={handleCardColumnsDesktopChange}
+                                    onCardColumnsMobileChange={handleCardColumnsMobileChange}
+                                    onTileColumnsDesktopChange={handleTileColumnsDesktopChange}
+                                    onTileColumnsMobileChange={handleTileColumnsMobileChange}
                                     onPrimaryAction={handlePrimaryAction}
                                     singleClickAction={singleClickAction}
                                     onSelect={handleSelect}
@@ -1046,8 +1070,14 @@ export function App() {
                     onThemeColorChange={handleThemeColorChange}
                     singleClickAction={singleClickAction}
                     onSingleClickActionChange={handleSingleClickActionChange}
-                    gridColumns={gridColumns}
-                    onGridColumnsChange={handleGridColumnsChange}
+                    cardColumnsDesktop={cardColumnsDesktop}
+                    cardColumnsMobile={cardColumnsMobile}
+                    tileColumnsDesktop={tileColumnsDesktop}
+                    tileColumnsMobile={tileColumnsMobile}
+                    onCardColumnsDesktopChange={handleCardColumnsDesktopChange}
+                    onCardColumnsMobileChange={handleCardColumnsMobileChange}
+                    onTileColumnsDesktopChange={handleTileColumnsDesktopChange}
+                    onTileColumnsMobileChange={handleTileColumnsMobileChange}
                 />
 
                 <Modal

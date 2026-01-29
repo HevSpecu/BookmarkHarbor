@@ -55,7 +55,10 @@ function getDefaultData(): StorageData {
             folderViewModes: {},
             themeColor: '#3B82F6',
             singleClickAction: 'select',
-            gridColumns: 4,
+            cardColumnsDesktop: 4,
+            cardColumnsMobile: 2,
+            tileColumnsDesktop: 4,
+            tileColumnsMobile: 2,
         },
     };
 }
@@ -84,11 +87,47 @@ export function loadFromStorage(): StorageData {
             data.settings.singleClickAction = defaults.settings.singleClickAction;
         }
 
-        const gridColumns = Number(data.settings.gridColumns);
-        const clampedColumns = Number.isFinite(gridColumns)
-            ? Math.min(10, Math.max(2, Math.round(gridColumns)))
-            : defaults.settings.gridColumns;
-        data.settings.gridColumns = clampedColumns;
+        const clampSetting = (value: unknown, min: number, max: number, fallback: number) => {
+            const numeric = Number(value);
+            if (!Number.isFinite(numeric)) return fallback;
+            return Math.min(max, Math.max(min, Math.round(numeric)));
+        };
+
+        const legacyGridColumns = Number((data.settings as { gridColumns?: unknown }).gridColumns);
+        if (Number.isFinite(legacyGridColumns)) {
+            if (data.settings.cardColumnsDesktop === undefined) {
+                data.settings.cardColumnsDesktop = clampSetting(legacyGridColumns, 2, 9, defaults.settings.cardColumnsDesktop);
+            }
+            if (data.settings.tileColumnsDesktop === undefined) {
+                data.settings.tileColumnsDesktop = clampSetting(legacyGridColumns, 1, 7, defaults.settings.tileColumnsDesktop);
+            }
+        }
+        delete (data.settings as { gridColumns?: unknown }).gridColumns;
+
+        data.settings.cardColumnsDesktop = clampSetting(
+            data.settings.cardColumnsDesktop,
+            2,
+            9,
+            defaults.settings.cardColumnsDesktop
+        );
+        data.settings.cardColumnsMobile = clampSetting(
+            data.settings.cardColumnsMobile,
+            1,
+            4,
+            defaults.settings.cardColumnsMobile
+        );
+        data.settings.tileColumnsDesktop = clampSetting(
+            data.settings.tileColumnsDesktop,
+            1,
+            7,
+            defaults.settings.tileColumnsDesktop
+        );
+        data.settings.tileColumnsMobile = clampSetting(
+            data.settings.tileColumnsMobile,
+            1,
+            2,
+            defaults.settings.tileColumnsMobile
+        );
 
         // 视图模式迁移：'grid' -> 'card'
         if ((data.settings as { viewMode?: unknown }).viewMode === 'grid') {

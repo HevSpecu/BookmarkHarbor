@@ -53,8 +53,14 @@ interface SettingsModalProps {
     onThemeColorChange: (color: string) => void;
     singleClickAction: SingleClickAction;
     onSingleClickActionChange: (action: SingleClickAction) => void;
-    gridColumns: number;
-    onGridColumnsChange: (value: number) => void;
+    cardColumnsDesktop: number;
+    cardColumnsMobile: number;
+    tileColumnsDesktop: number;
+    tileColumnsMobile: number;
+    onCardColumnsDesktopChange: (value: number) => void;
+    onCardColumnsMobileChange: (value: number) => void;
+    onTileColumnsDesktopChange: (value: number) => void;
+    onTileColumnsMobileChange: (value: number) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -76,8 +82,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onThemeColorChange,
     singleClickAction,
     onSingleClickActionChange,
-    gridColumns,
-    onGridColumnsChange,
+    cardColumnsDesktop,
+    cardColumnsMobile,
+    tileColumnsDesktop,
+    tileColumnsMobile,
+    onCardColumnsDesktopChange,
+    onCardColumnsMobileChange,
+    onTileColumnsDesktopChange,
+    onTileColumnsMobileChange,
 }) => {
     const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
@@ -195,30 +207,103 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             </Select>
                         </div>
 
-                        {/* 卡片/平铺列数 */}
+                        {/* 卡片视图列数 */}
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
-                                <Icon icon="lucide:columns-3" className="w-5 h-5 text-gray-400" />
-                                <span className="text-sm">{t('settings.gridColumns')}</span>
+                                <Icon icon="lucide:grid-2x2" className="w-5 h-5 text-gray-400" />
+                                <span className="text-sm">{t('settings.cardColumns')}</span>
                             </div>
-                            <div className="flex items-center gap-3 w-44">
-                                <Slider
-                                    size="sm"
-                                    minValue={2}
-                                    maxValue={10}
-                                    step={1}
-                                    value={gridColumns}
-                                    onChange={(value) => {
-                                        const next = Array.isArray(value) ? value[0] : value;
-                                        onGridColumnsChange(next);
-                                    }}
-                                    aria-label={t('settings.gridColumns')}
-                                    classNames={{
-                                        filler: 'bg-[rgb(var(--color-primary-500-rgb))]',
-                                        thumb: 'bg-white border border-gray-200',
-                                    }}
-                                />
-                                <span className="text-xs text-gray-500 w-4 text-right">{gridColumns}</span>
+                            <div className="flex flex-col gap-2 w-52">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs text-gray-500 w-10">{t('settings.columnsDesktop')}</span>
+                                    <Slider
+                                        size="sm"
+                                        minValue={2}
+                                        maxValue={9}
+                                        step={1}
+                                        value={cardColumnsDesktop}
+                                        onChange={(value) => {
+                                            const next = Array.isArray(value) ? value[0] : value;
+                                            onCardColumnsDesktopChange(next);
+                                        }}
+                                        aria-label={`${t('settings.cardColumns')} ${t('settings.columnsDesktop')}`}
+                                        classNames={{
+                                            filler: 'bg-[rgb(var(--color-primary-500-rgb))]',
+                                            thumb: 'bg-white border border-gray-200',
+                                        }}
+                                    />
+                                    <span className="text-xs text-gray-500 w-4 text-right">{cardColumnsDesktop}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs text-gray-500 w-10">{t('settings.columnsMobile')}</span>
+                                    <Slider
+                                        size="sm"
+                                        minValue={1}
+                                        maxValue={4}
+                                        step={1}
+                                        value={cardColumnsMobile}
+                                        onChange={(value) => {
+                                            const next = Array.isArray(value) ? value[0] : value;
+                                            onCardColumnsMobileChange(next);
+                                        }}
+                                        aria-label={`${t('settings.cardColumns')} ${t('settings.columnsMobile')}`}
+                                        classNames={{
+                                            filler: 'bg-[rgb(var(--color-primary-500-rgb))]',
+                                            thumb: 'bg-white border border-gray-200',
+                                        }}
+                                    />
+                                    <span className="text-xs text-gray-500 w-4 text-right">{cardColumnsMobile}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 平铺视图列数 */}
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <Icon icon="lucide:layout-grid" className="w-5 h-5 text-gray-400" />
+                                <span className="text-sm">{t('settings.tileColumns')}</span>
+                            </div>
+                            <div className="flex flex-col gap-2 w-52">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs text-gray-500 w-10">{t('settings.columnsDesktop')}</span>
+                                    <Slider
+                                        size="sm"
+                                        minValue={1}
+                                        maxValue={7}
+                                        step={1}
+                                        value={tileColumnsDesktop}
+                                        onChange={(value) => {
+                                            const next = Array.isArray(value) ? value[0] : value;
+                                            onTileColumnsDesktopChange(next);
+                                        }}
+                                        aria-label={`${t('settings.tileColumns')} ${t('settings.columnsDesktop')}`}
+                                        classNames={{
+                                            filler: 'bg-[rgb(var(--color-primary-500-rgb))]',
+                                            thumb: 'bg-white border border-gray-200',
+                                        }}
+                                    />
+                                    <span className="text-xs text-gray-500 w-4 text-right">{tileColumnsDesktop}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs text-gray-500 w-10">{t('settings.columnsMobile')}</span>
+                                    <Slider
+                                        size="sm"
+                                        minValue={1}
+                                        maxValue={2}
+                                        step={1}
+                                        value={tileColumnsMobile}
+                                        onChange={(value) => {
+                                            const next = Array.isArray(value) ? value[0] : value;
+                                            onTileColumnsMobileChange(next);
+                                        }}
+                                        aria-label={`${t('settings.tileColumns')} ${t('settings.columnsMobile')}`}
+                                        classNames={{
+                                            filler: 'bg-[rgb(var(--color-primary-500-rgb))]',
+                                            thumb: 'bg-white border border-gray-200',
+                                        }}
+                                    />
+                                    <span className="text-xs text-gray-500 w-4 text-right">{tileColumnsMobile}</span>
+                                </div>
                             </div>
                         </div>
 
