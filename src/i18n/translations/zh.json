@@ -31,6 +31,7 @@
         "redo": "重做",
         "sort": "排序",
         "sortBy": "排序方式",
+        "sortDefault": "默认顺序",
         "sortByName": "名称",
         "sortByDate": "修改日期",
         "sortByType": "类型",

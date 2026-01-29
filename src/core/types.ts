@@ -119,7 +119,7 @@ export interface ImportHtmlResult {
 export type ExportScope = 'all' | 'folder' | 'selection';
 
 // 排序字段
-export type SortField = 'title' | 'updatedAt' | 'createdAt' | 'type';
+export type SortField = 'default' | 'title' | 'updatedAt' | 'createdAt' | 'type';
 
 // 排序顺序
 export type SortOrder = 'asc' | 'desc';

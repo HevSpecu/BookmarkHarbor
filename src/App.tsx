@@ -20,7 +20,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
 // Core
-import type { Node, ExportScope, Locale, CardFolderPreviewSize, ViewMode, SingleClickAction } from './core/types';
+import type { Node, ExportScope, Locale, CardFolderPreviewSize, ViewMode, SingleClickAction, SortField, SortOrder } from './core/types';
 import {
     useNodes,
     useNodeActions,
@@ -95,6 +95,8 @@ export function App() {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [currentView, setCurrentView] = useState<'bookmarks' | 'favorites' | 'readLater' | 'trash'>('bookmarks');
     const [selectionMode, setSelectionMode] = useState(false);
+    const [sortField, setSortField] = useState<SortField>('default');
+    const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -297,26 +299,64 @@ export function App() {
         return currentChildren;
     }, [currentChildren, currentView, nodes]);
 
-    // 搜索过滤
+    // 搜索过滤 + 排序（仅视觉排序，不修改存储顺序）
     const visibleNodes = useMemo(() => {
-        if (!searchQuery) {
-            return baseNodes;
-        }
+        const source = (() => {
+            if (!searchQuery) return baseNodes;
 
-        const query = searchQuery.toLowerCase();
-        const searchSource = currentView === 'bookmarks'
-            ? Object.values(nodes).filter(n => !n.deletedAt && n.id !== 'root')
-            : baseNodes;
+            const query = searchQuery.toLowerCase();
+            const searchSource = currentView === 'bookmarks'
+                ? Object.values(nodes).filter(n => !n.deletedAt && n.id !== 'root')
+                : baseNodes;
 
-        return searchSource
-            .filter(n =>
-                n.title.toLowerCase().includes(query) ||
-                (n.url && n.url.toLowerCase().includes(query))
-            )
-            .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
-    }, [baseNodes, currentView, nodes, searchQuery]);
+            return searchSource
+                .filter(n =>
+                    n.title.toLowerCase().includes(query) ||
+                    (n.url && n.url.toLowerCase().includes(query))
+                )
+                .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+        })();
 
-    const isSortableView = currentView === 'bookmarks' && !searchQuery;
+        if (sortField === 'default') return source;
+
+        const typeRank = (node: Node) => (node.type === 'folder' ? 0 : 1);
+
+        const sorted = [...source].sort((a, b) => {
+            const typeDiff = typeRank(a) - typeRank(b);
+            if (sortField !== 'type' && currentView === 'bookmarks' && typeDiff !== 0) {
+                return typeDiff;
+            }
+
+            let diff = 0;
+            switch (sortField) {
+                case 'title':
+                    diff = a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' });
+                    break;
+                case 'updatedAt':
+                    diff = (a.updatedAt ?? a.createdAt ?? 0) - (b.updatedAt ?? b.createdAt ?? 0);
+                    break;
+                case 'createdAt':
+                    diff = (a.createdAt ?? 0) - (b.createdAt ?? 0);
+                    break;
+                case 'type':
+                    diff = typeDiff;
+                    break;
+                default:
+                    diff = 0;
+                    break;
+            }
+
+            if (diff === 0) {
+                diff = a.orderKey.localeCompare(b.orderKey);
+            }
+
+            return sortOrder === 'asc' ? diff : -diff;
+        });
+
+        return sorted;
+    }, [baseNodes, currentView, nodes, searchQuery, sortField, sortOrder]);
+
+    const isSortableView = currentView === 'bookmarks' && !searchQuery && sortField === 'default';
 
     // 选择管理
     const selection = useSelection({ visibleNodes });
@@ -341,6 +381,11 @@ export function App() {
         }
         setViewMode(mode);
     }, [currentFolderId, currentView, folderViewModes, rememberFolderView, setViewMode, updateSettings]);
+
+    const handleSortChange = useCallback((field: SortField, order: SortOrder) => {
+        setSortField(field);
+        setSortOrder(order);
+    }, []);
 
     type UpdatePatch = Parameters<typeof updateNode>[1];
     type UpdateEntry = { id: string; patch: UpdatePatch };
@@ -955,6 +1000,9 @@ export function App() {
                             canRedo={history.canRedo}
                             viewMode={activeViewMode}
                             onViewModeChange={handleViewModeChange}
+                            sortField={sortField}
+                            sortOrder={sortOrder}
+                            onSortChange={handleSortChange}
                         />
 
                         <div className="flex flex-1 overflow-hidden relative">

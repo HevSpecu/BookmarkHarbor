@@ -61,7 +61,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     canRedo = false,
     viewMode,
     onViewModeChange,
-    sortField = 'title',
+    sortField = 'default',
     sortOrder = 'asc',
     onSortChange,
 }) => {
@@ -219,6 +219,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     <DropdownMenu aria-label="Sort options">
                         <DropdownSection title={t('toolbar.sortBy')} showDivider>
                             <DropdownItem
+                                key="default"
+                                startContent={<Icon icon="lucide:align-left" className="w-4 h-4" />}
+                                onPress={() => handleSortFieldChange('default')}
+                                className={sortField === 'default' ? 'text-primary' : ''}
+                            >
+                                {t('toolbar.sortDefault')}
+                            </DropdownItem>
+                            <DropdownItem
                                 key="title"
                                 startContent={<Icon icon="lucide:type" className="w-4 h-4" />}
                                 onPress={() => handleSortFieldChange('title')}
@@ -248,6 +256,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                                 key="asc"
                                 startContent={<Icon icon="lucide:arrow-up" className="w-4 h-4" />}
                                 onPress={() => handleSortOrderChange('asc')}
+                                isDisabled={sortField === 'default'}
                                 className={sortOrder === 'asc' ? 'text-primary' : ''}
                             >
                                 {t('toolbar.ascending')}
@@ -256,6 +265,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                                 key="desc"
                                 startContent={<Icon icon="lucide:arrow-down" className="w-4 h-4" />}
                                 onPress={() => handleSortOrderChange('desc')}
+                                isDisabled={sortField === 'default'}
                                 className={sortOrder === 'desc' ? 'text-primary' : ''}
                             >
                                 {t('toolbar.descending')}

@@ -31,6 +31,7 @@
         "redo": "Redo",
         "sort": "Sort",
         "sortBy": "Sort By",
+        "sortDefault": "Default order",
         "sortByName": "Name",
         "sortByDate": "Modified Date",
         "sortByType": "Type",
