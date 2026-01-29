@@ -2,7 +2,7 @@
  * SettingsModal 组件 - 设置弹窗
  */
 
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Modal,
     ModalContent,
@@ -53,6 +53,7 @@ interface SettingsModalProps {
     onThemeColorChange: (color: string) => void;
     singleClickAction: SingleClickAction;
     onSingleClickActionChange: (action: SingleClickAction) => void;
+    activeViewMode: ViewMode;
     cardColumnsDesktop: number;
     cardColumnsMobile: number;
     tileColumnsDesktop: number;
@@ -82,6 +83,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onThemeColorChange,
     singleClickAction,
     onSingleClickActionChange,
+    activeViewMode,
     cardColumnsDesktop,
     cardColumnsMobile,
     tileColumnsDesktop,
@@ -93,6 +95,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
     const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
+    const [isCompact, setIsCompact] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const media = window.matchMedia('(max-width: 639px)');
+        const update = () => setIsCompact(media.matches);
+        update();
+        if (typeof media.addEventListener === 'function') {
+            media.addEventListener('change', update);
+            return () => media.removeEventListener('change', update);
+        }
+        media.addListener(update);
+        return () => media.removeListener(update);
+    }, []);
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="md">
@@ -207,105 +223,79 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             </Select>
                         </div>
 
-                        {/* 卡片视图列数 */}
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <Icon icon="lucide:grid-2x2" className="w-5 h-5 text-gray-400" />
-                                <span className="text-sm">{t('settings.cardColumns')}</span>
-                            </div>
-                            <div className="flex flex-col gap-2 w-52">
+                        {activeViewMode === 'card' && (
+                            <div className="flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xs text-gray-500 w-10">{t('settings.columnsDesktop')}</span>
+                                    <Icon icon="lucide:grid-2x2" className="w-5 h-5 text-gray-400" />
+                                    <span className="text-sm">{t('settings.cardColumns')}</span>
+                                </div>
+                                <div className="flex items-center gap-3 w-52">
+                                    <span className="text-xs text-gray-500 w-10">
+                                        {isCompact ? t('settings.columnsMobile') : t('settings.columnsDesktop')}
+                                    </span>
                                     <Slider
                                         size="sm"
-                                        minValue={2}
-                                        maxValue={9}
+                                        minValue={isCompact ? 1 : 2}
+                                        maxValue={isCompact ? 4 : 9}
                                         step={1}
-                                        value={cardColumnsDesktop}
+                                        value={isCompact ? cardColumnsMobile : cardColumnsDesktop}
                                         onChange={(value) => {
                                             const next = Array.isArray(value) ? value[0] : value;
-                                            onCardColumnsDesktopChange(next);
+                                            if (isCompact) {
+                                                onCardColumnsMobileChange(next);
+                                            } else {
+                                                onCardColumnsDesktopChange(next);
+                                            }
                                         }}
-                                        aria-label={`${t('settings.cardColumns')} ${t('settings.columnsDesktop')}`}
+                                        aria-label={`${t('settings.cardColumns')} ${isCompact ? t('settings.columnsMobile') : t('settings.columnsDesktop')}`}
                                         classNames={{
                                             filler: 'bg-[rgb(var(--color-primary-500-rgb))]',
                                             thumb: 'bg-white border border-gray-200',
                                         }}
                                     />
-                                    <span className="text-xs text-gray-500 w-4 text-right">{cardColumnsDesktop}</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-xs text-gray-500 w-10">{t('settings.columnsMobile')}</span>
-                                    <Slider
-                                        size="sm"
-                                        minValue={1}
-                                        maxValue={4}
-                                        step={1}
-                                        value={cardColumnsMobile}
-                                        onChange={(value) => {
-                                            const next = Array.isArray(value) ? value[0] : value;
-                                            onCardColumnsMobileChange(next);
-                                        }}
-                                        aria-label={`${t('settings.cardColumns')} ${t('settings.columnsMobile')}`}
-                                        classNames={{
-                                            filler: 'bg-[rgb(var(--color-primary-500-rgb))]',
-                                            thumb: 'bg-white border border-gray-200',
-                                        }}
-                                    />
-                                    <span className="text-xs text-gray-500 w-4 text-right">{cardColumnsMobile}</span>
+                                    <span className="text-xs text-gray-500 w-4 text-right">
+                                        {isCompact ? cardColumnsMobile : cardColumnsDesktop}
+                                    </span>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
-                        {/* 平铺视图列数 */}
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <Icon icon="lucide:layout-grid" className="w-5 h-5 text-gray-400" />
-                                <span className="text-sm">{t('settings.tileColumns')}</span>
-                            </div>
-                            <div className="flex flex-col gap-2 w-52">
+                        {activeViewMode === 'tile' && (
+                            <div className="flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xs text-gray-500 w-10">{t('settings.columnsDesktop')}</span>
+                                    <Icon icon="lucide:layout-grid" className="w-5 h-5 text-gray-400" />
+                                    <span className="text-sm">{t('settings.tileColumns')}</span>
+                                </div>
+                                <div className="flex items-center gap-3 w-52">
+                                    <span className="text-xs text-gray-500 w-10">
+                                        {isCompact ? t('settings.columnsMobile') : t('settings.columnsDesktop')}
+                                    </span>
                                     <Slider
                                         size="sm"
-                                        minValue={1}
-                                        maxValue={7}
+                                        minValue={isCompact ? 1 : 1}
+                                        maxValue={isCompact ? 2 : 7}
                                         step={1}
-                                        value={tileColumnsDesktop}
+                                        value={isCompact ? tileColumnsMobile : tileColumnsDesktop}
                                         onChange={(value) => {
                                             const next = Array.isArray(value) ? value[0] : value;
-                                            onTileColumnsDesktopChange(next);
+                                            if (isCompact) {
+                                                onTileColumnsMobileChange(next);
+                                            } else {
+                                                onTileColumnsDesktopChange(next);
+                                            }
                                         }}
-                                        aria-label={`${t('settings.tileColumns')} ${t('settings.columnsDesktop')}`}
+                                        aria-label={`${t('settings.tileColumns')} ${isCompact ? t('settings.columnsMobile') : t('settings.columnsDesktop')}`}
                                         classNames={{
                                             filler: 'bg-[rgb(var(--color-primary-500-rgb))]',
                                             thumb: 'bg-white border border-gray-200',
                                         }}
                                     />
-                                    <span className="text-xs text-gray-500 w-4 text-right">{tileColumnsDesktop}</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-xs text-gray-500 w-10">{t('settings.columnsMobile')}</span>
-                                    <Slider
-                                        size="sm"
-                                        minValue={1}
-                                        maxValue={2}
-                                        step={1}
-                                        value={tileColumnsMobile}
-                                        onChange={(value) => {
-                                            const next = Array.isArray(value) ? value[0] : value;
-                                            onTileColumnsMobileChange(next);
-                                        }}
-                                        aria-label={`${t('settings.tileColumns')} ${t('settings.columnsMobile')}`}
-                                        classNames={{
-                                            filler: 'bg-[rgb(var(--color-primary-500-rgb))]',
-                                            thumb: 'bg-white border border-gray-200',
-                                        }}
-                                    />
-                                    <span className="text-xs text-gray-500 w-4 text-right">{tileColumnsMobile}</span>
+                                    <span className="text-xs text-gray-500 w-4 text-right">
+                                        {isCompact ? tileColumnsMobile : tileColumnsDesktop}
+                                    </span>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* 卡片视图文件夹预览尺寸 */}
                         <div className="flex items-center justify-between">

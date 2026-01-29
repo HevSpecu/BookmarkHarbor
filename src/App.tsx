@@ -1118,6 +1118,7 @@ export function App() {
                     onThemeColorChange={handleThemeColorChange}
                     singleClickAction={singleClickAction}
                     onSingleClickActionChange={handleSingleClickActionChange}
+                    activeViewMode={activeViewMode}
                     cardColumnsDesktop={cardColumnsDesktop}
                     cardColumnsMobile={cardColumnsMobile}
                     tileColumnsDesktop={tileColumnsDesktop}
