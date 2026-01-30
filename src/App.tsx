@@ -76,7 +76,7 @@ function parseContentDropId(id: string): { folderId: string } | null {
 }
 
 export function App() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { nodes } = useNodes();
     const { createNode, updateNode, moveNodes, deleteNodes, restoreNodes } = useNodeActions();
     const [theme, setTheme] = useTheme();
@@ -435,6 +435,13 @@ export function App() {
             },
         });
     }, [history, nodes, updateNode]);
+
+    useEffect(() => {
+        const currentLanguage = i18n.language?.split('-')[0] ?? 'zh';
+        if (currentLanguage !== locale) {
+            changeLanguage(locale);
+        }
+    }, [i18n.language, locale]);
 
     // 处理语言切换
     const handleLocaleChange = useCallback((newLocale: Locale) => {
