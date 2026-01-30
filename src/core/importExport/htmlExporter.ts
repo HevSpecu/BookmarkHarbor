@@ -24,8 +24,13 @@ const HTML_HEADER = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
      DO NOT EDIT! -->
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
 <TITLE>Bookmarks</TITLE>
-<H1>Bookmarks</H1>
+<H1>书签菜单</H1>
 `;
+
+function formatTimestamp(ms?: number): string {
+    if (!ms) return '';
+    return `${Math.floor(ms / 1000)}`;
+}
 
 /**
  * 生成单个节点的 HTML
@@ -39,11 +44,20 @@ function generateNodeHtml(
         // 书签
         const title = escapeHtml(node.title);
         const url = escapeHtmlAttribute(node.url || '');
-        const addDate = node.createdAt ? ` ADD_DATE="${Math.floor(node.createdAt / 1000)}"` : '';
-        const lastModified = node.updatedAt ? ` LAST_MODIFIED="${Math.floor(node.updatedAt / 1000)}"` : '';
+        const addDate = node.createdAt ? ` ADD_DATE="${formatTimestamp(node.createdAt)}"` : '';
+        const lastModified = node.updatedAt ? ` LAST_MODIFIED="${formatTimestamp(node.updatedAt)}"` : '';
         const tags = node.tags && node.tags.length > 0 ? ` TAGS="${escapeHtmlAttribute(node.tags.join(','))}"` : '';
+        const iconUri = node.iconUrl ? ` ICON_URI="${escapeHtmlAttribute(node.iconUrl)}"` : '';
+        const icon =
+            node.iconUrl && node.iconUrl.startsWith('data:')
+                ? ` ICON="${escapeHtmlAttribute(node.iconUrl)}"`
+                : '';
 
-        return `${indent}<DT><A HREF="${url}"${addDate}${lastModified}${tags}>${title}</A>\n`;
+        let html = `${indent}<DT><A HREF="${url}"${addDate}${lastModified}${tags}${iconUri}${icon}>${title}</A>\n`;
+        if (node.notes) {
+            html += `${indent}<DD>${escapeHtml(node.notes)}\n`;
+        }
+        return html;
     } else {
         // 文件夹
         const title = escapeHtml(node.title);
@@ -51,9 +65,13 @@ function generateNodeHtml(
             .filter(n => n.parentId === node.id && !n.deletedAt)
             .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
 
-        const addDate = node.createdAt ? ` ADD_DATE="${Math.floor(node.createdAt / 1000)}"` : '';
-        const lastModified = node.updatedAt ? ` LAST_MODIFIED="${Math.floor(node.updatedAt / 1000)}"` : '';
-        let html = `${indent}<DT><H3${addDate}${lastModified}>${title}</H3>\n${indent}<DL><p>\n`;
+        const addDate = node.createdAt ? ` ADD_DATE="${formatTimestamp(node.createdAt)}"` : '';
+        const lastModified = node.updatedAt ? ` LAST_MODIFIED="${formatTimestamp(node.updatedAt)}"` : '';
+        let html = `${indent}<DT><H3${addDate}${lastModified}>${title}</H3>\n`;
+        if (node.notes) {
+            html += `${indent}<DD>${escapeHtml(node.notes)}\n`;
+        }
+        html += `${indent}<DL><p>\n`;
 
         for (const child of children) {
             html += generateNodeHtml(child, nodes, indent + '    ');
@@ -79,7 +97,7 @@ export function exportAllBookmarks(nodes: Record<string, Node>): string {
         html += generateNodeHtml(child, nodes, '    ');
     }
 
-    html += '</DL><p>\n';
+    html += '</DL>\n';
     return html;
 }
 
@@ -101,14 +119,20 @@ export function exportFolder(
 
     let html = HTML_HEADER;
     html += '<DL><p>\n';
-    html += `    <DT><H3>${escapeHtml(folder.title)}</H3>\n    <DL><p>\n`;
+    const addDate = folder.createdAt ? ` ADD_DATE="${formatTimestamp(folder.createdAt)}"` : '';
+    const lastModified = folder.updatedAt ? ` LAST_MODIFIED="${formatTimestamp(folder.updatedAt)}"` : '';
+    html += `    <DT><H3${addDate}${lastModified}>${escapeHtml(folder.title)}</H3>\n`;
+    if (folder.notes) {
+        html += `    <DD>${escapeHtml(folder.notes)}\n`;
+    }
+    html += '    <DL><p>\n';
 
     for (const child of children) {
         html += generateNodeHtml(child, nodes, '        ');
     }
 
     html += '    </DL><p>\n';
-    html += '</DL><p>\n';
+    html += '</DL>\n';
     return html;
 }
 
@@ -129,14 +153,15 @@ export function exportSelection(
 
     let html = HTML_HEADER;
     html += '<DL><p>\n';
-    html += '    <DT><H3>Exported Bookmarks</H3>\n    <DL><p>\n';
+    const now = Date.now();
+    html += `    <DT><H3 ADD_DATE="${formatTimestamp(now)}" LAST_MODIFIED="${formatTimestamp(now)}">Exported Bookmarks</H3>\n    <DL><p>\n`;
 
     for (const node of selectedNodes) {
         html += generateNodeHtml(node, nodes, '        ');
     }
 
     html += '    </DL><p>\n';
-    html += '</DL><p>\n';
+    html += '</DL>\n';
     return html;
 }
 
