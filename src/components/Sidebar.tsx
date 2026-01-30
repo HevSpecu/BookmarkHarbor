@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { ScrollShadow, Button } from '@heroui/react';
+import { ScrollShadow, Button, Link } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import { useDroppable } from '@dnd-kit/core';
@@ -203,8 +203,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onNavigateToTrash,
     currentView = 'bookmarks',
 }) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const rootNode = nodes[rootId];
+    const isChinese = i18n.language?.toLowerCase().startsWith('zh');
+    const copyrightOwner = isChinese ? '天空之镜' : 'HevSpecu';
+    const currentYear = new Date().getFullYear();
 
     const rootChildren = rootNode
         ? Object.values(nodes)
@@ -311,6 +314,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Settings */}
             <div className="flex-shrink-0 p-3 border-t border-gray-200/50 dark:border-white/5">
+                <div className="px-3 pb-2 text-[11px] leading-4 text-gray-400 dark:text-gray-500">
+                    <div className="flex items-center gap-1">
+                        <span>© {currentYear}</span>
+                        <Link
+                            href="https://hevspecu.hxcn.space"
+                            isExternal
+                            underline="hover"
+                            size="sm"
+                            color="foreground"
+                            className="text-[11px] text-gray-500 dark:text-gray-400"
+                        >
+                            {copyrightOwner}
+                        </Link>
+                    </div>
+                    <div>All Rights Reserved</div>
+                </div>
                 <Button
                     variant="light"
                     className="w-full justify-start gap-3 px-3 py-2 text-gray-600 dark:text-gray-400"
