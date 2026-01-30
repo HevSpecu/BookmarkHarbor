@@ -4,7 +4,7 @@
 
 ## English
 
-BookmarkHarbor is a modern, file-manager-style bookmark manager built with Vite + React. It focuses on fast keyboard-first workflows, visual organization, and local-first storage.
+BookmarkHarbor is an open-source, file-manager-style, local-first bookmark browser with a modern UI and multilingual support. Everything stays in your browser for privacy and speed.
 
 ### Features
 
@@ -107,7 +107,7 @@ Metadata fetch is done on the client. Some sites may block requests due to CORS.
 
 ## 中文
 
-BookmarkHarbor（书签浏览器）是一个文件管理器风格的现代书签管理器，基于 Vite + React 构建，强调键盘优先、可视化组织和本地优先存储。
+书签浏览器（BookmarkHarbor）是文件管理器风格的本地书签管理器，开源、现代美观，支持多语言。所有数据完全保存在本地，隐私更安全。
 
 ### 功能
 
