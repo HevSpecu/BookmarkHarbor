@@ -215,7 +215,9 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     const handleTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
         if (viewMode === 'list') return;
         if (event.touches.length === 2) {
-            const [a, b] = event.touches;
+            const a = event.touches.item(0);
+            const b = event.touches.item(1);
+            if (!a || !b) return;
             const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
             pinchRef.current = { distance };
         }
@@ -224,8 +226,10 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     const handleTouchMove = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
         if (viewMode === 'list') return;
         if (event.touches.length !== 2 || !pinchRef.current) return;
+        const a = event.touches.item(0);
+        const b = event.touches.item(1);
+        if (!a || !b) return;
         event.preventDefault();
-        const [a, b] = event.touches;
         const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
         const diff = distance - pinchRef.current.distance;
         if (Math.abs(diff) > 24) {
@@ -247,6 +251,9 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
         const maxByWidth = Math.max(gridConfig.min, Math.floor((contentWidth + gap) / (minWidth + gap)));
         return Math.min(baseColumns, maxByWidth);
     }, [clampColumns, contentWidth, gridConfig.min, gridConfig.value, viewMode]);
+    const gridStyle = viewMode === 'list'
+        ? undefined
+        : { gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))` };
 
     // Get grid class based on view mode
     const getGridClass = (forFolders = false) => {
@@ -359,7 +366,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                                 layout
                                 transition={layoutTransition}
                                 className={cn(getGridClass())}
-                                style={viewMode === 'list' ? undefined : { gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))` }}
+                                style={gridStyle}
                                 onPointerDown={(e) => {
                                     if (e.target === e.currentTarget) onClearSelection();
                                 }}
@@ -374,7 +381,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                     ) : (
                         <div
                             className={cn(getGridClass())}
-                            style={viewMode === 'list' ? undefined : { gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))` }}
+                            style={gridStyle}
                             onPointerDown={(e) => {
                                 if (e.target === e.currentTarget) onClearSelection();
                             }}
@@ -411,7 +418,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                             layout
                             transition={layoutTransition}
                             className={cn(getGridClass())}
-                            style={viewMode === 'list' ? undefined : { gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))` }}
+                            style={gridStyle}
                             onPointerDown={(e) => {
                                 if (e.target === e.currentTarget) onClearSelection();
                             }}
@@ -455,7 +462,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                 ) : (
                     <div
                         className={cn(getGridClass())}
-                        style={viewMode === 'list' ? undefined : { gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))` }}
+                        style={gridStyle}
                         onPointerDown={(e) => {
                             if (e.target === e.currentTarget) onClearSelection();
                         }}

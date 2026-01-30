@@ -2,6 +2,8 @@
  * 通用工具函数
  */
 
+import clsx, { type ClassValue } from 'clsx';
+
 /**
  * 生成 UUID v4
  */
@@ -196,6 +198,6 @@ export function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
 /**
  * 类名合并工具（类似 clsx）
  */
-export function cn(...classes: (string | boolean | undefined | null)[]): string {
-    return classes.filter(Boolean).join(' ');
+export function cn(...classes: ClassValue[]): string {
+    return clsx(...classes);
 }
